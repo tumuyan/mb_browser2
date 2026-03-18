@@ -16,9 +16,9 @@ namespace MusicBeePlugin
             mbApiInterface = new MusicBeeApiInterface();
             mbApiInterface.Initialise(apiInterfacePtr);
             about.PluginInfoVersion = PluginInfoVersion;
-            about.Name = "Plugin Name";
-            about.Description = "A brief description of what this plugin does";
-            about.Author = "Author";
+            about.Name = "Browser2";
+            about.Description = "A new web browser";
+            about.Author = "tumuyan";
             about.TargetApplication = "";   //  the name of a Plugin Storage device or panel header for a dockable panel
             about.Type = PluginType.General;
             about.VersionMajor = 1;  // your plugin version
