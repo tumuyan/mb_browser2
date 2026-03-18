@@ -61,12 +61,12 @@ namespace MusicBeePlugin.Properties {
         }
         
         /// <summary>
-        ///   查找类似于 (图标) 的 System.Drawing.Icon 类型的本地化资源。
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
-        internal static System.Drawing.Icon icon_ie {
+        internal static System.Drawing.Bitmap iconmonstr_networking_6_16 {
             get {
-                object obj = ResourceManager.GetObject("icon_ie", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
+                object obj = ResourceManager.GetObject("iconmonstr-networking-6-16", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
     }

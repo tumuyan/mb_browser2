@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -13,6 +13,17 @@ using MusicBeePlugin.Properties;
 
 namespace MusicBeePlugin
 {
+    public static class GraphicsExtensions
+    {
+        public static void DrawRoundRect(this Graphics graphics, Pen pen, Rectangle rect, int radius)
+        {
+            graphics.DrawLine(pen, rect.Left + radius, rect.Top, rect.Right - radius, rect.Top);
+            graphics.DrawLine(pen, rect.Right, rect.Top + radius, rect.Right, rect.Bottom - radius);
+            graphics.DrawLine(pen, rect.Left + radius, rect.Bottom, rect.Right - radius, rect.Bottom);
+            graphics.DrawLine(pen, rect.Left, rect.Top + radius, rect.Left, rect.Bottom - radius);
+        }
+    }
+
     public partial class Plugin
     {
         private MusicBeeApiInterface mbApiInterface;
@@ -77,7 +88,7 @@ namespace MusicBeePlugin
             about.MinApiRevision = MinApiRevision;
             about.ReceiveNotifications = (ReceiveNotificationFlags.PlayerEvents | ReceiveNotificationFlags.TagEvents);
             about.ConfigurationPanelHeight = 0;
-            mbApiInterface.MB_Trace("Browser2: Initialise completed");
+            Debug.WriteLine("Browser2: Initialise completed");
             return about;
         }
 
@@ -207,13 +218,13 @@ namespace MusicBeePlugin
             switch (type)
             {
                 case NotificationType.PluginStartup:
-                    mbApiInterface.MB_Trace("Browser2: PluginStartup");
-                    mbApiInterface.MB_Trace("Browser2: API Revision = " + mbApiInterface.ApiRevision);
+                    Debug.WriteLine("Browser2: PluginStartup");
+                    Debug.WriteLine("Browser2: API Revision = " + mbApiInterface.ApiRevision);
                     //MessageBox.Show("Browser2: PluginStartup! API=" + mbApiInterface.ApiRevision, "Browser2");
                     try
                     {
-                        mbApiInterface.MB_Trace("Browser2: Adding tree node");
-                        using (var bitmap = Resources.icon_ie.ToBitmap())
+                        Debug.WriteLine("Browser2: Adding tree node");
+                        using (var bitmap = Resources.iconmonstr_networking_6_16)
                         {
                             mbApiInterface.MB_AddTreeNode("Services", "Browser2", bitmap, openHandler, closeHandler);
                         }
@@ -221,7 +232,7 @@ namespace MusicBeePlugin
                     }
                     catch (Exception ex)
                     {
-                        mbApiInterface.MB_Trace("Browser2: MenuItem exception: " + ex.Message);
+                        Debug.WriteLine("Browser2: MenuItem exception: " + ex.Message);
                         MessageBox.Show("Browser2: MenuItem error: " + ex.Message, "Browser2 Error");
                     }
                     break;
@@ -238,13 +249,12 @@ namespace MusicBeePlugin
 
         public void OpenBrowser(object sender, EventArgs e)
         {
-            Debug.WriteLine("开始 OpenBrowser");
-            mbApiInterface.MB_Trace("Browser2: OpenBrowser called");
+            Debug.WriteLine("Browser2: OpenBrowser called");
             string text = null;
             if (browser == null || browser.CoreWebView2 == null)
             {
                 text = LoadSettings();
-                mbApiInterface.MB_Trace("Browser2: LoadSettings returned: " + (text ?? "null"));
+                Debug.WriteLine("Browser2: LoadSettings returned: " + (text ?? "null"));
                 browser = null;
                 panel = null;
                 InitializeBrowser();
@@ -259,7 +269,7 @@ namespace MusicBeePlugin
             }
             if (!string.IsNullOrEmpty(text))
             {
-                mbApiInterface.MB_Trace("Browser2: Calling NavigateTo with: " + text);
+                Debug.WriteLine("Browser2: Calling NavigateTo with: " + text);
                 pendingUrl = text;
                 TryNavigate();
             }
@@ -269,12 +279,12 @@ namespace MusicBeePlugin
 
         private void InitializeBrowser()
         {
-            mbApiInterface.MB_Trace("Browser2: InitializeBrowser started");
+            Debug.WriteLine("Browser2: InitializeBrowser started");
             Font font = mbApiInterface.Setting_GetDefaultFont();
 
             panel = new UserControl();
             panel.AutoScroll = false;
-            mbApiInterface.MB_Trace("Browser2: UserControl panel created");
+            Debug.WriteLine("Browser2: UserControl panel created");
 
             if (string.IsNullOrEmpty(defaultUrl))
             {
@@ -290,9 +300,9 @@ namespace MusicBeePlugin
             }
 
             locationBar = new TextBox();
-            locationBar.BorderStyle = BorderStyle.None;
-            locationBar.BackColor = Color.White;
-            locationBar.ForeColor = Color.Black;
+            locationBar.BorderStyle = BorderStyle.FixedSingle;
+            locationBar.BackColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentBackground);
+            locationBar.ForeColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentForeground);
             locationBar.Font = font;
             locationBar.TabStop = true;
             locationBar.KeyDown += LocationBar_KeyDown;
@@ -315,12 +325,12 @@ namespace MusicBeePlugin
             browser.NavigationCompleted += Browser_NavigationCompleted;
             browser.SourceChanged += Browser_SourceChanged;
 
-            panel.Controls.Add(browser);
             panel.Controls.Add(header);
+            panel.Controls.Add(browser);
             panel.TabStop = false;
 
             ResizeHeader();
-            mbApiInterface.MB_Trace("Browser2: InitializeBrowser completed, initializing WebView2");
+            Debug.WriteLine("Browser2: InitializeBrowser completed, initializing WebView2");
 
             InitializeWebView2AndAddPanel();
         }
@@ -344,13 +354,13 @@ namespace MusicBeePlugin
                 await browser.EnsureCoreWebView2Async(webViewEnvironment);
                 System.Diagnostics.Trace.WriteLine("WebView2 Initialize completed");
                 browser.CoreWebView2.NewWindowRequested += CoreWebView2_NewWindowRequested;
-                mbApiInterface.MB_Trace("Browser2: WebView2 initialized");
+                Debug.WriteLine("Browser2: WebView2 initialized");
                 AddPanelToMusicBee();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine("WebView2 init error: " + ex);
-                mbApiInterface.MB_Trace("Browser2: WebView2 init error: " + ex.Message);
+                Debug.WriteLine("Browser2: WebView2 init error: " + ex.Message);
                 MessageBox.Show("WebView2 init error: " + ex.Message, "Browser2 Error");
             }
         }
@@ -358,7 +368,7 @@ namespace MusicBeePlugin
         private void AddPanelToMusicBee()
         {
             mbApiInterface.MB_AddPanel(panel, PluginPanelDock.MainPanel);
-            mbApiInterface.MB_Trace("Browser2: Panel added to MainPanel");
+            Debug.WriteLine("Browser2: Panel added to MainPanel");
             TryNavigate();
         }
         
@@ -399,17 +409,29 @@ namespace MusicBeePlugin
         private bool isMouseOverForward;
         private bool isMouseOverBookmark;
 
+        private Color GetThemeColor(SkinElement element, ElementComponent component)
+        {
+            int colorInt = mbApiInterface.Setting_GetSkinElementColour(element, ElementState.ElementStateDefault, component);
+            return ColorTranslator.FromWin32(colorInt);
+        }
+
         private void LoadBrowserImages()
         {
         }
 
         private void Header_Paint(object sender, PaintEventArgs e)
         {
-            using (var brush = new LinearGradientBrush(new Rectangle(0, 0, 1, header.Height - 1), Color.FromArgb(246, 248, 250), Color.FromArgb(235, 237, 239), LinearGradientMode.Vertical))
+            Color headerBg = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentBackground);
+            Color headerFg = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentForeground);
+            Color borderColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentBorder);
+
+            Debug.WriteLine($"Browser2: Header_Paint - Bg={headerBg.ToArgb():X8}, Fg={headerFg.ToArgb():X8}, Border={borderColor.ToArgb():X8}");
+
+            using (var brush = new SolidBrush(headerBg))
             {
                 e.Graphics.FillRectangle(brush, new Rectangle(0, 0, header.Width, header.Height - 1));
             }
-            using (var pen = new Pen(Color.FromArgb(187, 190, 193)))
+            using (var pen = new Pen(borderColor))
             {
                 e.Graphics.DrawLine(pen, 0, header.Height - 1, header.Width, header.Height - 1);
             }
@@ -417,34 +439,32 @@ namespace MusicBeePlugin
             if (browser.CanGoBack)
             {
                 Rectangle backBounds = BrowseBackButtonBounds;
-                e.Graphics.DrawString("<", new Font("Arial", 10), Brushes.DarkGray, backBounds.Location);
+                e.Graphics.DrawString("<", new Font("Arial", 10), new SolidBrush(headerFg), backBounds.Location);
             }
 
             if (browser.CanGoForward)
             {
                 Rectangle forwardBounds = BrowseForwardButtonBounds;
-                e.Graphics.DrawString(">", new Font("Arial", 10), Brushes.DarkGray, forwardBounds.Location);
+                e.Graphics.DrawString(">", new Font("Arial", 10), new SolidBrush(headerFg), forwardBounds.Location);
             }
 
             if (isMouseOverBookmark)
             {
                 Rectangle bmBounds = BookmarkHighlightBounds;
-                using (var brush = new LinearGradientBrush(new Rectangle(0, 0, 1, header.Height - 1), Color.FromArgb(251, 253, 255), Color.FromArgb(245, 247, 249), LinearGradientMode.Vertical))
+                using (var brush = new SolidBrush(Color.FromArgb(50, headerFg)))
                 {
                     e.Graphics.FillRectangle(brush, bmBounds);
                 }
                 bmBounds.Width--;
                 bmBounds.Height--;
-                using (var pen = new Pen(Color.FromArgb(210, 210, 210)))
+                using (var pen = new Pen(borderColor))
                 {
                     e.Graphics.DrawRectangle(pen, bmBounds);
                 }
             }
 
             string bookmarkSymbol = currentIsFavourite ? "*" : "";
-            e.Graphics.DrawString(bookmarkSymbol, new Font("Arial", 12), Brushes.Blue, BookmarkButtonBounds.Location);
-
-            e.Graphics.FillRectangle(Brushes.White, new Rectangle(107, 10, header.Width - 107 - 50, 22));
+            e.Graphics.DrawString(bookmarkSymbol, new Font("Arial", 12), new SolidBrush(headerFg), BookmarkButtonBounds.Location);
 
             if (faviconImage != null)
             {
@@ -452,12 +472,7 @@ namespace MusicBeePlugin
             }
 
             string refreshSymbol = isLoading ? "X" : "R";
-            e.Graphics.DrawString(refreshSymbol, new Font("Arial", 10), Brushes.DarkGray, RefreshStopButtonBounds.Location);
-
-            using (var pen = new Pen(Color.FromArgb(188, 190, 205)))
-            {
-                e.Graphics.DrawRectangle(pen, new Rectangle(106, 9, header.Width - 106 - 50, 23));
-            }
+            e.Graphics.DrawString(refreshSymbol, new Font("Arial", 10), new SolidBrush(headerFg), RefreshStopButtonBounds.Location);
         }
 
         private void Header_Resize(object sender, EventArgs e)
@@ -469,7 +484,7 @@ namespace MusicBeePlugin
         {
             if (locationBar != null && header != null)
             {
-                locationBar.Bounds = new Rectangle(129, (header.Height - locationBar.Font.Height) / 2, header.Width - 129 - 50 - 20 - 5, locationBar.Font.Height);
+                locationBar.Bounds = new Rectangle(107, 10, header.Width - 107 - 50 - 20, locationBar.Font.Height + 4);
                 if (locationBarPrompt != null)
                 {
                     locationBarPrompt.Bounds = new Rectangle(locationBar.Left + 1, locationBar.Top, locationBar.Width - 1, locationBar.Height);
@@ -697,7 +712,7 @@ namespace MusicBeePlugin
             }
             catch (Exception ex)
             {
-                mbApiInterface.MB_Trace("Navigation error: " + ex.Message);
+                Debug.WriteLine("Navigation error: " + ex.Message);
             }
         }
 
@@ -706,7 +721,7 @@ namespace MusicBeePlugin
             isLoading = true;
             ShowNavigationTarget(e.Uri);
             header.Invalidate();
-            mbApiInterface.MB_Trace("Browser2: NavigationStarting - " + e.Uri);
+            Debug.WriteLine("Browser2: NavigationStarting - " + e.Uri);
         }
 
         private void Browser_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
@@ -714,7 +729,7 @@ namespace MusicBeePlugin
             isLoading = false;
             activeUrl = browser.Source?.ToString();
             header.Invalidate();
-            mbApiInterface.MB_Trace("Browser2: NavigationCompleted - " + (e.IsSuccess ? "Success" : "Failed: " + e.WebErrorStatus));
+            Debug.WriteLine("Browser2: NavigationCompleted - " + (e.IsSuccess ? "Success" : "Failed: " + e.WebErrorStatus));
         }
 
         private void Browser_SourceChanged(object sender, CoreWebView2SourceChangedEventArgs e)
