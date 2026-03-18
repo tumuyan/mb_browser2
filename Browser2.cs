@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -9,21 +9,10 @@ using Microsoft.Web.WebView2.WinForms;
 using Microsoft.Web.WebView2.Core;
 using System.Diagnostics;
 using System.Resources;
-using MusicBeePlugin.Properties;
+using System.IO;
 
 namespace MusicBeePlugin
 {
-    public static class GraphicsExtensions
-    {
-        public static void DrawRoundRect(this Graphics graphics, Pen pen, Rectangle rect, int radius)
-        {
-            graphics.DrawLine(pen, rect.Left + radius, rect.Top, rect.Right - radius, rect.Top);
-            graphics.DrawLine(pen, rect.Right, rect.Top + radius, rect.Right, rect.Bottom - radius);
-            graphics.DrawLine(pen, rect.Left + radius, rect.Bottom, rect.Right - radius, rect.Bottom);
-            graphics.DrawLine(pen, rect.Left, rect.Top + radius, rect.Left, rect.Bottom - radius);
-        }
-    }
-
     public partial class Plugin
     {
         private MusicBeeApiInterface mbApiInterface;
@@ -49,6 +38,8 @@ namespace MusicBeePlugin
         private ToolStripMenuItem playNowMenuItem;
         private ToolStripMenuItem queueNextMenuItem;
         private ToolStripMenuItem queueLastMenuItem;
+
+        private ContextMenuStrip bookmarkContextMenu;
 
         private EventHandler openHandler;
         private EventHandler closeHandler;
@@ -87,28 +78,29 @@ namespace MusicBeePlugin
             about.MinInterfaceVersion = MinInterfaceVersion;
             about.MinApiRevision = MinApiRevision;
             about.ReceiveNotifications = (ReceiveNotificationFlags.PlayerEvents | ReceiveNotificationFlags.TagEvents);
-            about.ConfigurationPanelHeight = 0;
+            about.ConfigurationPanelHeight = 40;   // height in pixels that musicbee should reserve in a panel for config settings. When set, a handle to an empty panel will be passed to the Configure function
             Debug.WriteLine("Browser2: Initialise completed");
             return about;
         }
 
         public bool Configure(IntPtr panelHandle)
         {
-            string dataPath = mbApiInterface.Setting_GetPersistentStoragePath();
             if (panelHandle != IntPtr.Zero)
             {
                 Panel configPanel = (Panel)Panel.FromHandle(panelHandle);
                 Label prompt = new Label();
                 prompt.AutoSize = true;
-                prompt.Location = new Point(0, 0);
+                prompt.Location = new Point(0, 6);
                 prompt.Text = "Default URL:";
                 TextBox textBox = new TextBox();
-                textBox.Bounds = new Rectangle(80, 0, 300, textBox.Height);
-                textBox.Text = defaultUrl ?? "";
+                textBox.Bounds = new Rectangle(prompt.Width+50, 0, 400, textBox.Height);
+                textBox.Text =  defaultUrl ?? "";
+                //textBox.TextChanged += new EventHandler(textBox_TextChanged); // 绑定 TextChanged 事件
                 textBox.TextChanged += (s, e) => { defaultUrl = textBox.Text; isSettingsDirty = true; };
                 configPanel.Controls.AddRange(new Control[] { prompt, textBox });
             }
             return false;
+
         }
 
         public void SaveSettings()
@@ -224,9 +216,19 @@ namespace MusicBeePlugin
                     try
                     {
                         Debug.WriteLine("Browser2: Adding tree node");
-                        using (var bitmap = Resources.iconmonstr_networking_6_16)
+                        string pluginPath = Path.GetDirectoryName(typeof(Plugin).Assembly.Location);
+                        string iconPath = Path.Combine(pluginPath, "Resources", "iconmonstr-networking-6-16.png");
+                        if (File.Exists(iconPath))
                         {
-                            mbApiInterface.MB_AddTreeNode("Services", "Browser2", bitmap, openHandler, closeHandler);
+                            using (var bitmap = new Bitmap(iconPath))
+                            {
+                                mbApiInterface.MB_AddTreeNode("Services", "Browser2", bitmap, openHandler, closeHandler);
+                            }
+                        }
+                        else
+                        {
+                            Debug.WriteLine("Browser2: Icon not found at " + iconPath);
+                            mbApiInterface.MB_AddTreeNode("Services", "Browser2", null, openHandler, closeHandler);
                         }
                         mbApiInterface.MB_AddMenuItem("mnuTools/Browser2", "Browser2", openHandler);
                     }
@@ -401,13 +403,15 @@ namespace MusicBeePlugin
         private Rectangle FavoritesHighlightBounds => new Rectangle(12, 9, 24, 24);
         private Rectangle BrowseBackButtonBounds => new Rectangle(54, 8, 28, 29);
         private Rectangle BrowseForwardButtonBounds => new Rectangle(81, 10, 25, 20);
-        private Rectangle RefreshStopButtonBounds => new Rectangle(header.Width - 50 - 20, 13, 16, 16);
-        private Rectangle BookmarkHighlightBounds => new Rectangle(header.Width - 36, 9, 24, 24);
-        private Rectangle BookmarkButtonBounds => new Rectangle(header.Width - 32, 13, 16, 16);
+        private Rectangle RefreshStopButtonBounds => new Rectangle(header.Width - 90 - 20, 13, 16, 16);
+        private Rectangle BookmarkButtonBounds => new Rectangle(header.Width - 76, 9, 24, 24);
+        private Rectangle BookmarkListButtonBounds => new Rectangle(header.Width - 50, 13, 16, 16);
+        private Rectangle BookmarkHighlightBounds => new Rectangle(header.Width - 76, 9, 24, 24);
 
         private bool isMouseOverBack;
         private bool isMouseOverForward;
         private bool isMouseOverBookmark;
+        private bool isMouseOverBookmarkList;
 
         private Color GetThemeColor(SkinElement element, ElementComponent component)
         {
@@ -466,6 +470,23 @@ namespace MusicBeePlugin
             string bookmarkSymbol = currentIsFavourite ? "*" : "";
             e.Graphics.DrawString(bookmarkSymbol, new Font("Arial", 12), new SolidBrush(headerFg), BookmarkButtonBounds.Location);
 
+            if (isMouseOverBookmarkList)
+            {
+                Rectangle bmlBounds = BookmarkListButtonBounds;
+                using (var brush = new SolidBrush(Color.FromArgb(50, headerFg)))
+                {
+                    e.Graphics.FillRectangle(brush, bmlBounds);
+                }
+                bmlBounds.Width--;
+                bmlBounds.Height--;
+                using (var pen = new Pen(borderColor))
+                {
+                    e.Graphics.DrawRectangle(pen, bmlBounds);
+                }
+            }
+
+            e.Graphics.DrawString("B", new Font("Arial", 9, FontStyle.Bold), new SolidBrush(headerFg), BookmarkListButtonBounds.Location);
+
             if (faviconImage != null)
             {
                 e.Graphics.DrawImage(faviconImage, new Rectangle(110, 13, 16, 16));
@@ -484,7 +505,7 @@ namespace MusicBeePlugin
         {
             if (locationBar != null && header != null)
             {
-                locationBar.Bounds = new Rectangle(107, 10, header.Width - 107 - 50 - 20, locationBar.Font.Height + 4);
+                locationBar.Bounds = new Rectangle(107, 10, header.Width - 107 - 90 - 20, locationBar.Font.Height + 4);
                 if (locationBarPrompt != null)
                 {
                     locationBarPrompt.Bounds = new Rectangle(locationBar.Left + 1, locationBar.Top, locationBar.Width - 1, locationBar.Height);
@@ -535,6 +556,20 @@ namespace MusicBeePlugin
             else if (isMouseOverBookmark)
             {
                 isMouseOverBookmark = false;
+                needInvalidate = true;
+            }
+
+            if (BookmarkListButtonBounds.Contains(e.Location))
+            {
+                if (!isMouseOverBookmarkList)
+                {
+                    isMouseOverBookmarkList = true;
+                    needInvalidate = true;
+                }
+            }
+            else if (isMouseOverBookmarkList)
+            {
+                isMouseOverBookmarkList = false;
                 needInvalidate = true;
             }
 
@@ -606,6 +641,47 @@ namespace MusicBeePlugin
                     }
                 }
             }
+            else if (BookmarkListButtonBounds.Contains(e.Location))
+            {
+                ShowBookmarkMenu();
+            }
+        }
+
+        private void ShowBookmarkMenu()
+        {
+            if (bookmarkContextMenu == null)
+            {
+                bookmarkContextMenu = new ContextMenuStrip();
+            }
+            bookmarkContextMenu.Items.Clear();
+
+            if (favourites.Count == 0)
+            {
+                bookmarkContextMenu.Items.Add("(No bookmarks)");
+            }
+            else
+            {
+                foreach (var fav in favourites)
+                {
+                    var item = new ToolStripMenuItem
+                    {
+                        Text = fav.Name,
+                        ToolTipText = fav.Url
+                    };
+                    if (fav.Icon != null)
+                    {
+                        item.Image = fav.Icon;
+                    }
+                    item.Click += (s, e) =>
+                    {
+                        NavigateTo(fav.Url);
+                    };
+                    bookmarkContextMenu.Items.Add(item);
+                }
+            }
+
+            var location = header.PointToScreen(new Point(header.Width - 50, header.Height));
+            bookmarkContextMenu.Show(location);
         }
 
         private void RemoveFavourite(int index)
@@ -736,7 +812,10 @@ namespace MusicBeePlugin
         {
             if (browser.Source != null)
             {
-                SetLocationBarText(browser.Source.ToString());
+                string newUrl = browser.Source.ToString();
+                SetLocationBarText(newUrl);
+                activeUrl = newUrl;
+                Debug.WriteLine("Browser2: SourceChanged - " + newUrl);
             }
         }
 

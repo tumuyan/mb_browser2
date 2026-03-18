@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MusicBee": {
+      "commandName": "Executable",
+      "executablePath": "A:\\Media\\MusicBee\\MusicBee.exe",
+      "workingDirectory": "A:\\Media\\MusicBee",
+      "commandLineArgs": ""
+    }
+  }
+}
