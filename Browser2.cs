@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using Microsoft.Web.WebView2;
@@ -31,6 +32,15 @@ namespace MusicBeePlugin
         private Bitmap faviconImage;
         private bool currentIsFavourite;
 
+        private Bitmap backIcon;
+        private Bitmap forwardIcon;
+        private Bitmap refreshIcon;
+        private Bitmap stopIcon;
+        private Bitmap homeIcon;
+        private Bitmap starFilledIcon;
+        private Bitmap starLinedIcon;
+        private Bitmap menuIcon;
+
         private List<Bookmark> favourites = new List<Bookmark>();
         private int settingsVersion = 3;
         private bool isSettingsDirty;
@@ -43,6 +53,9 @@ namespace MusicBeePlugin
 
         private EventHandler openHandler;
         private EventHandler closeHandler;
+
+        private Color themeForegroundColor;
+        private Color themeBackgroundColor;
 
         private struct Bookmark
         {
@@ -91,7 +104,7 @@ namespace MusicBeePlugin
                 Label prompt = new Label();
                 prompt.AutoSize = true;
                 prompt.Location = new Point(0, 6);
-                prompt.Text = "Default URL:";
+                prompt.Text = "Home Page";
                 TextBox textBox = new TextBox();
                 textBox.Bounds = new Rectangle(prompt.Width+50, 0, 400, textBox.Height);
                 textBox.Text =  defaultUrl ?? "";
@@ -199,6 +212,16 @@ namespace MusicBeePlugin
             {
                 SaveSettings();
             }
+            
+            // 释放图标资源
+            backIcon?.Dispose();
+            forwardIcon?.Dispose();
+            homeIcon?.Dispose();
+            refreshIcon?.Dispose();
+            stopIcon?.Dispose();
+            starFilledIcon?.Dispose();
+            starLinedIcon?.Dispose();
+            menuIcon?.Dispose();
         }
 
         public void Uninstall()
@@ -213,28 +236,43 @@ namespace MusicBeePlugin
                     Debug.WriteLine("Browser2: PluginStartup");
                     Debug.WriteLine("Browser2: API Revision = " + mbApiInterface.ApiRevision);
                     //MessageBox.Show("Browser2: PluginStartup! API=" + mbApiInterface.ApiRevision, "Browser2");
+                    
+                    // Debug: 遍历所有 SkinElement 的配色
+                    DebugSkinColors();
+                    
                     try
                     {
                         Debug.WriteLine("Browser2: Adding tree node");
-                        string pluginPath = Path.GetDirectoryName(typeof(Plugin).Assembly.Location);
-                        string iconPath = Path.Combine(pluginPath, "Resources", "iconmonstr-networking-6-16.png");
-                        if (File.Exists(iconPath))
+                        themeForegroundColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentForeground);
+                        themeBackgroundColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentBackground);
+
+                        // 加载主题图标
+                        backIcon = CreateThemedIcon("iconmonstr-arrow-left-alt-filled-16.png", Color.Transparent, themeForegroundColor);
+                        forwardIcon = CreateThemedIcon("iconmonstr-arrow-right-alt-filled-16.png", Color.Transparent, themeForegroundColor);
+                        homeIcon = CreateThemedIcon("iconmonstr-home-7-16.png", Color.Transparent, themeForegroundColor);
+                        refreshIcon = CreateThemedIcon("iconmonstr-refresh-lined-16.png", Color.Transparent, themeForegroundColor);
+                        stopIcon = CreateThemedIcon("iconmonstr-x-mark-9-16.png", Color.Transparent, themeForegroundColor);
+                        starFilledIcon = CreateThemedIcon("iconmonstr-star-filled-16.png", Color.Transparent, themeForegroundColor);
+                        starLinedIcon = CreateThemedIcon("iconmonstr-star-lined-16.png", Color.Transparent, themeForegroundColor);
+                        menuIcon = CreateThemedIcon("iconmonstr-menu-square-lined-16.png", Color.Transparent, themeForegroundColor);
+
+                        var themedIcon = CreateThemedIcon("iconmonstr-networking-6-16.png", Color.Transparent, themeForegroundColor);
+                        if (themedIcon != null)
                         {
-                            using (var bitmap = new Bitmap(iconPath))
-                            {
-                                mbApiInterface.MB_AddTreeNode("Services", "Browser2", bitmap, openHandler, closeHandler);
-                            }
+                            mbApiInterface.MB_AddTreeNode("Services", "Browser2", themedIcon, openHandler, closeHandler);
                         }
                         else
                         {
-                            Debug.WriteLine("Browser2: Icon not found at " + iconPath);
+                            Debug.WriteLine("Browser2: Failed to create themed icon");
                             mbApiInterface.MB_AddTreeNode("Services", "Browser2", null, openHandler, closeHandler);
                         }
-                        mbApiInterface.MB_AddMenuItem("mnuTools/Browser2", "Browser2", openHandler);
+
+                        //暂不添加到菜单中
+                        //mbApiInterface.MB_AddMenuItem("mnuTools/Browser2", "Browser2", openHandler);
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine("Browser2: MenuItem exception: " + ex.Message);
+                        Debug.WriteLine("Browser2: MenuItem exception: " + ex.Message + ex.StackTrace);
                         MessageBox.Show("Browser2: MenuItem error: " + ex.Message, "Browser2 Error");
                     }
                     break;
@@ -303,8 +341,8 @@ namespace MusicBeePlugin
 
             locationBar = new TextBox();
             locationBar.BorderStyle = BorderStyle.FixedSingle;
-            locationBar.BackColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentBackground);
-            locationBar.ForeColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentForeground);
+            locationBar.BackColor = themeBackgroundColor;
+            locationBar.ForeColor = themeForegroundColor;
             locationBar.Font = font;
             locationBar.TabStop = true;
             locationBar.KeyDown += LocationBar_KeyDown;
@@ -371,7 +409,77 @@ namespace MusicBeePlugin
         {
             mbApiInterface.MB_AddPanel(panel, PluginPanelDock.MainPanel);
             Debug.WriteLine("Browser2: Panel added to MainPanel");
+            
+            // 暂不实现隐藏标题栏功能
+            // HidePanelTitleBar();
+            
             TryNavigate();
+        }
+        
+        private void HidePanelTitleBar()
+        {
+            try
+            {
+                // 延迟执行，确保面板已经添加到 MusicBee
+                System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+                timer.Interval = 1500;
+                timer.Tick += (s, e) =>
+                {
+                    timer.Stop();
+                    timer.Dispose();
+                    
+                    if (panel != null && panel.Parent != null)
+                    {
+                        Debug.WriteLine($"Browser2: Panel parent is {panel.Parent.GetType().FullName}");
+                        Debug.WriteLine($"Browser2: Panel bounds: {panel.Bounds}");
+                        Debug.WriteLine($"Browser2: Panel location: {panel.Location}");
+                        
+                        // 检测 panel 是否有向上的偏移（这表示有标题栏区域）
+                        if (panel.Location.Y > 0)
+                        {
+                            Debug.WriteLine($"Browser2: Detected title bar offset: {panel.Location.Y} pixels");
+                            
+                            // 方法 1：将 panel 向上移动，覆盖标题栏区域
+                            Debug.WriteLine("Browser2: Attempting to reposition panel to cover title bar area");
+                            
+                            // 计算新的位置和大小：向上移动 panel，并增加高度以补偿
+                            int titleBarHeight = panel.Location.Y;
+                            Point newLocation = new Point(panel.Location.X, 0);
+                            Size newSize = new Size(panel.Size.Width, panel.Size.Height + titleBarHeight);
+                            
+                            Debug.WriteLine($"Browser2: Moving panel from Y={panel.Location.Y} to Y=0, height from {panel.Size.Height} to {newSize.Height}");
+                            
+                            // 应用新的位置和大小
+                            panel.Location = newLocation;
+                            panel.Size = newSize;
+                            
+                            Debug.WriteLine($"Browser2: New panel bounds: {panel.Bounds}");
+                            Debug.WriteLine($"Browser2: New panel location: {panel.Location}");
+                        }
+                        
+                        // 尝试获取 MusicBee 主窗口并修改其样式
+                        Control parent = panel.Parent;
+                        while (parent != null)
+                        {
+                            Debug.WriteLine($"Browser2: Checking parent: {parent.GetType().FullName}");
+                            
+                            // 如果找到顶层窗口，尝试修改其样式
+                            if (parent is Form parentForm)
+                            {
+                                Debug.WriteLine($"Browser2: Found Form: {parentForm.Text}");
+                                // 可以尝试修改窗口样式，但这可能影响 MusicBee 整体 UI
+                            }
+                            
+                            parent = parent.Parent;
+                        }
+                    }
+                };
+                timer.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Browser2: HidePanelTitleBar error: {ex.Message}");
+            }
         }
         
         private CoreWebView2Environment webViewEnvironment;
@@ -400,23 +508,107 @@ namespace MusicBeePlugin
             pendingUrl = null;
         }
 
-        private Rectangle FavoritesHighlightBounds => new Rectangle(12, 9, 24, 24);
-        private Rectangle BrowseBackButtonBounds => new Rectangle(54, 8, 28, 29);
-        private Rectangle BrowseForwardButtonBounds => new Rectangle(81, 10, 25, 20);
-        private Rectangle RefreshStopButtonBounds => new Rectangle(header.Width - 90 - 20, 13, 16, 16);
-        private Rectangle BookmarkButtonBounds => new Rectangle(header.Width - 76, 9, 24, 24);
-        private Rectangle BookmarkListButtonBounds => new Rectangle(header.Width - 50, 13, 16, 16);
-        private Rectangle BookmarkHighlightBounds => new Rectangle(header.Width - 76, 9, 24, 24);
+        // 按钮布局常量
+        private const int BUTTON_WIDTH = 32;  // 按钮位置计算宽度（包含间隙）
+        private const int BUTTON_HEIGHT = 24; // 按钮实际宽度和高度
+        private const int LEFT_MARGIN_BUTTONS = 1;  // 左侧保留 1 个按钮的间距
+        private const int RIGHT_MARGIN_BUTTONS = 1; // 右侧保留 1 个按钮的间距
+        
+        private Rectangle FavoritesHighlightBounds => new Rectangle(LEFT_MARGIN_BUTTONS * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
+        private Rectangle BrowseBackButtonBounds => new Rectangle((LEFT_MARGIN_BUTTONS + 0) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
+        private Rectangle BrowseForwardButtonBounds => new Rectangle((LEFT_MARGIN_BUTTONS + 1) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
+        private Rectangle HomeButtonBounds => new Rectangle((LEFT_MARGIN_BUTTONS + 2) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
+        private Rectangle RefreshStopButtonBounds => new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 0) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
+        private Rectangle BookmarkButtonBounds => new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 1) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
+        private Rectangle BookmarkListButtonBounds => new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 2) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
 
         private bool isMouseOverBack;
         private bool isMouseOverForward;
-        private bool isMouseOverBookmark;
-        private bool isMouseOverBookmarkList;
+        private bool isMouseOverHome;
 
         private Color GetThemeColor(SkinElement element, ElementComponent component)
         {
             int colorInt = mbApiInterface.Setting_GetSkinElementColour(element, ElementState.ElementStateDefault, component);
             return ColorTranslator.FromWin32(colorInt);
+        }
+
+        private void DebugSkinColors()
+        {
+            Debug.WriteLine("========== Skin Element Colors Debug ==========");
+            
+            // 已知的 SkinElement ID
+            HashSet<int> knownIds = new HashSet<int> { -1, 0, 7, 10, 14 };
+            
+            // 遍历 0-30 的所有整数值
+            Debug.WriteLine("ID\tBG\tFG\tBDR");
+            Debug.WriteLine("-------------------------------------------");
+            
+            for (int id = 0; id <= 30; id++)
+            {
+                // 跳过已知的 SkinElement
+                // if (knownIds.Contains(id))
+                // {
+                //     continue;
+                // }
+                
+                SkinElement testElement = (SkinElement)id;
+                
+                try
+                {
+                    Color bg = GetThemeColor(testElement, ElementComponent.ComponentBackground);
+                    Color fg = GetThemeColor(testElement, ElementComponent.ComponentForeground);
+                    Color bdr = GetThemeColor(testElement, ElementComponent.ComponentBorder);
+                    
+                    // 检查是否为有效配色（背景和前景不全是黑色）
+                    if (bg.ToArgb() != Color.Black.ToArgb() || fg.ToArgb() != Color.Black.ToArgb())
+                    {
+                        Debug.WriteLine($"{id}\t#{bg.R:X2}{bg.G:X2}{bg.B:X2}\t#{fg.R:X2}{fg.G:X2}{fg.B:X2}\t#{bdr.R:X2}{bdr.G:X2}{bdr.B:X2}");
+                    }
+                }
+                catch
+                {
+                    // 跳过无效的元素
+                }
+            }
+            
+            Debug.WriteLine("\n========== End Skin Element Colors Debug ==========");
+        }
+
+        private Bitmap CreateThemedIcon(string iconFileName, Color bgColor, Color fgColor)
+        {
+            string pluginPath = Path.GetDirectoryName(typeof(Plugin).Assembly.Location);
+            string iconPath = Path.Combine(pluginPath, "Resources", iconFileName);
+            
+            if (!File.Exists(iconPath))
+            {
+                Debug.WriteLine("Browser2: Icon not found at " + iconPath);
+                return null;
+            }
+
+            using (var originalIcon = new Bitmap(iconPath))
+            {
+                // if (bgColor == Color.Transparent)
+                //     return (Bitmap)originalIcon.Clone();
+
+                Bitmap themedIcon = new Bitmap(originalIcon.Width, originalIcon.Height);
+                using (Graphics g = Graphics.FromImage(themedIcon))
+                {
+                    g.Clear(bgColor);
+                    using (ImageAttributes imageAttrs = new ImageAttributes())
+                    {
+                        ColorMap[] colorMap = new ColorMap[1];
+                        colorMap[0] = new ColorMap();
+                        colorMap[0].OldColor = Color.Black;
+                        colorMap[0].NewColor = fgColor;
+                        imageAttrs.SetRemapTable(colorMap);
+
+                        Rectangle rect = new Rectangle(0, 0, originalIcon.Width, originalIcon.Height);
+                        g.DrawImage(originalIcon, rect, 0, 0, originalIcon.Width, originalIcon.Height, GraphicsUnit.Pixel, imageAttrs);
+                    }
+                }
+
+                return themedIcon;
+            }
         }
 
         private void LoadBrowserImages()
@@ -425,13 +617,10 @@ namespace MusicBeePlugin
 
         private void Header_Paint(object sender, PaintEventArgs e)
         {
-            Color headerBg = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentBackground);
-            Color headerFg = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentForeground);
-            Color borderColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentBorder);
+            Color borderColor = GetThemeColor(SkinElement.SkinInputPanel, ElementComponent.ComponentBorder);
+            Debug.WriteLine($"Browser2: Header_Paint - Bg={themeBackgroundColor.ToArgb():X8}, Fg={themeForegroundColor.ToArgb():X8}, Border={borderColor.ToArgb():X8}");
 
-            Debug.WriteLine($"Browser2: Header_Paint - Bg={headerBg.ToArgb():X8}, Fg={headerFg.ToArgb():X8}, Border={borderColor.ToArgb():X8}");
-
-            using (var brush = new SolidBrush(headerBg))
+            using (var brush = new SolidBrush(themeBackgroundColor))
             {
                 e.Graphics.FillRectangle(brush, new Rectangle(0, 0, header.Width, header.Height - 1));
             }
@@ -440,60 +629,51 @@ namespace MusicBeePlugin
                 e.Graphics.DrawLine(pen, 0, header.Height - 1, header.Width, header.Height - 1);
             }
 
-            if (browser.CanGoBack)
+            if (browser.CanGoBack && backIcon != null)
             {
                 Rectangle backBounds = BrowseBackButtonBounds;
-                e.Graphics.DrawString("<", new Font("Arial", 10), new SolidBrush(headerFg), backBounds.Location);
+                e.Graphics.DrawImage(backIcon, backBounds);
             }
 
-            if (browser.CanGoForward)
+            if (browser.CanGoForward && forwardIcon != null)
             {
                 Rectangle forwardBounds = BrowseForwardButtonBounds;
-                e.Graphics.DrawString(">", new Font("Arial", 10), new SolidBrush(headerFg), forwardBounds.Location);
+                e.Graphics.DrawImage(forwardIcon, forwardBounds);
             }
 
-            if (isMouseOverBookmark)
+            if (homeIcon != null)
             {
-                Rectangle bmBounds = BookmarkHighlightBounds;
-                using (var brush = new SolidBrush(Color.FromArgb(50, headerFg)))
-                {
-                    e.Graphics.FillRectangle(brush, bmBounds);
-                }
-                bmBounds.Width--;
-                bmBounds.Height--;
-                using (var pen = new Pen(borderColor))
-                {
-                    e.Graphics.DrawRectangle(pen, bmBounds);
-                }
+                Rectangle homeBounds = HomeButtonBounds;
+                e.Graphics.DrawImage(homeIcon, homeBounds);
             }
 
-            string bookmarkSymbol = currentIsFavourite ? "*" : "";
-            e.Graphics.DrawString(bookmarkSymbol, new Font("Arial", 12), new SolidBrush(headerFg), BookmarkButtonBounds.Location);
-
-            if (isMouseOverBookmarkList)
+            if (currentIsFavourite && starFilledIcon != null)
             {
-                Rectangle bmlBounds = BookmarkListButtonBounds;
-                using (var brush = new SolidBrush(Color.FromArgb(50, headerFg)))
-                {
-                    e.Graphics.FillRectangle(brush, bmlBounds);
-                }
-                bmlBounds.Width--;
-                bmlBounds.Height--;
-                using (var pen = new Pen(borderColor))
-                {
-                    e.Graphics.DrawRectangle(pen, bmlBounds);
-                }
+                e.Graphics.DrawImage(starFilledIcon, BookmarkButtonBounds);
+            }
+            else if (starLinedIcon != null)
+            {
+                e.Graphics.DrawImage(starLinedIcon, BookmarkButtonBounds);
             }
 
-            e.Graphics.DrawString("B", new Font("Arial", 9, FontStyle.Bold), new SolidBrush(headerFg), BookmarkListButtonBounds.Location);
+            if (menuIcon != null)
+            {
+                e.Graphics.DrawImage(menuIcon, BookmarkListButtonBounds);
+            }
 
             if (faviconImage != null)
             {
                 e.Graphics.DrawImage(faviconImage, new Rectangle(110, 13, 16, 16));
             }
 
-            string refreshSymbol = isLoading ? "X" : "R";
-            e.Graphics.DrawString(refreshSymbol, new Font("Arial", 10), new SolidBrush(headerFg), RefreshStopButtonBounds.Location);
+            if (isLoading && stopIcon != null)
+            {
+                e.Graphics.DrawImage(stopIcon, RefreshStopButtonBounds);
+            }
+            else if (refreshIcon != null)
+            {
+                e.Graphics.DrawImage(refreshIcon, RefreshStopButtonBounds);
+            }
         }
 
         private void Header_Resize(object sender, EventArgs e)
@@ -505,7 +685,25 @@ namespace MusicBeePlugin
         {
             if (locationBar != null && header != null)
             {
-                locationBar.Bounds = new Rectangle(107, 10, header.Width - 107 - 90 - 20, locationBar.Font.Height + 4);
+                // 计算左右按钮区域的宽度
+                int leftButtonWidth = (LEFT_MARGIN_BUTTONS + 3) * BUTTON_WIDTH;  // 左侧边距 + 3 个按钮
+                int rightButtonWidth = (RIGHT_MARGIN_BUTTONS + 3) * BUTTON_WIDTH; // 右侧边距 + 3 个按钮
+                int buttonSpacing = 4;     // 按钮与地址栏的间距
+                
+                // 地址栏从左侧按钮区域后开始，到右侧按钮区域前结束
+                int locationBarX = leftButtonWidth + buttonSpacing;
+                int locationBarWidth = header.Width - leftButtonWidth - rightButtonWidth - buttonSpacing * 2;
+                
+                // 确保地址栏宽度不小于 0
+                if (locationBarWidth < 0)
+                {
+                    locationBarWidth = 0;
+                }
+                
+                // 设置地址栏位置和大小（Y 坐标上移到 2）
+                int locationBarY = 2;
+                locationBar.Bounds = new Rectangle(locationBarX, locationBarY, locationBarWidth, locationBar.Font.Height + 6);
+                
                 if (locationBarPrompt != null)
                 {
                     locationBarPrompt.Bounds = new Rectangle(locationBar.Left + 1, locationBar.Top, locationBar.Width - 1, locationBar.Height);
@@ -515,68 +713,7 @@ namespace MusicBeePlugin
 
         private void Header_MouseMove(object sender, MouseEventArgs e)
         {
-            bool needInvalidate = false;
-
-            if (BrowseBackButtonBounds.Contains(e.Location) && browser.CanGoBack)
-            {
-                if (!isMouseOverBack)
-                {
-                    isMouseOverBack = true;
-                    needInvalidate = true;
-                }
-            }
-            else if (isMouseOverBack)
-            {
-                isMouseOverBack = false;
-                needInvalidate = true;
-            }
-
-            if (BrowseForwardButtonBounds.Contains(e.Location) && browser.CanGoForward)
-            {
-                if (!isMouseOverForward)
-                {
-                    isMouseOverForward = true;
-                    needInvalidate = true;
-                }
-            }
-            else if (isMouseOverForward)
-            {
-                isMouseOverForward = false;
-                needInvalidate = true;
-            }
-
-            if (BookmarkHighlightBounds.Contains(e.Location))
-            {
-                if (!isMouseOverBookmark)
-                {
-                    isMouseOverBookmark = true;
-                    needInvalidate = true;
-                }
-            }
-            else if (isMouseOverBookmark)
-            {
-                isMouseOverBookmark = false;
-                needInvalidate = true;
-            }
-
-            if (BookmarkListButtonBounds.Contains(e.Location))
-            {
-                if (!isMouseOverBookmarkList)
-                {
-                    isMouseOverBookmarkList = true;
-                    needInvalidate = true;
-                }
-            }
-            else if (isMouseOverBookmarkList)
-            {
-                isMouseOverBookmarkList = false;
-                needInvalidate = true;
-            }
-
-            if (needInvalidate)
-            {
-                header.Invalidate();
-            }
+            // 已删除按钮悬浮效果
         }
 
         private void Header_MouseClick(object sender, MouseEventArgs e)
@@ -593,6 +730,13 @@ namespace MusicBeePlugin
                 if (browser.CanGoForward)
                 {
                     browser.GoForward();
+                }
+            }
+            else if (HomeButtonBounds.Contains(e.Location))
+            {
+                if (!string.IsNullOrEmpty(defaultUrl))
+                {
+                    browser.CoreWebView2?.Navigate(defaultUrl);
                 }
             }
             else if (RefreshStopButtonBounds.Contains(e.Location))
@@ -616,7 +760,7 @@ namespace MusicBeePlugin
                 }
                 header.Invalidate(RefreshStopButtonBounds);
             }
-            else if (BookmarkHighlightBounds.Contains(e.Location))
+            else if (BookmarkButtonBounds.Contains(e.Location))
             {
                 if (!string.IsNullOrEmpty(locationBar.Text))
                 {
@@ -637,7 +781,6 @@ namespace MusicBeePlugin
                         SaveSettings();
                         mbApiInterface.MB_SetBackgroundTaskMessage("Bookmark has been saved");
                         currentIsFavourite = true;
-                        header.Invalidate(BookmarkButtonBounds);
                     }
                 }
             }
