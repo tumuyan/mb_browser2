@@ -21,7 +21,40 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\iconmonstr-arrow-left-alt-filled-16.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-arrow-right-alt-filled-16.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-home-7-24.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-menu-square-lined-24.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Resources\iconmonstr-networking-6-16.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-networking-7-16.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-pin-2-24.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-pin-8-24.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-star-3-24.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-star-5-24.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-synchronization-3-24.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\iconmonstr-x-mark-9-24.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -31,9 +64,10 @@
       <FilesToCopy Include="$(TargetDir)*.pdb" />
       <FilesToCopy Include="$(TargetDir)*.config" />
       <FilesToCopy Include="$(TargetDir)*.xml" />
+      <FilesToCopy Include="$(TargetDir)Resources\*.png" />
     </ItemGroup>
     <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="A:\Media\MusicBee\Plugins" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
     <MakeDir Directories="A:\Media\MusicBee\Plugins\Resources" Condition="!Exists('A:\Media\MusicBee\Plugins\Resources')" />
-    <Copy SourceFiles="$(ProjectDir)Resources\iconmonstr-networking-6-16.png" DestinationFolder="A:\Media\MusicBee\Plugins\Resources" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
+    <Copy SourceFiles="$(ProjectDir)Resources\*.png" DestinationFolder="A:\Media\MusicBee\Plugins\Resources" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
   </Target>
 </Project>
