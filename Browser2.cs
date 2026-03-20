@@ -249,12 +249,12 @@ namespace MusicBeePlugin
                         // 加载主题图标
                         backIcon = CreateThemedIcon("iconmonstr-arrow-left-alt-filled-16.png", Color.Transparent, themeForegroundColor);
                         forwardIcon = CreateThemedIcon("iconmonstr-arrow-right-alt-filled-16.png", Color.Transparent, themeForegroundColor);
-                        homeIcon = CreateThemedIcon("iconmonstr-home-7-16.png", Color.Transparent, themeForegroundColor);
-                        refreshIcon = CreateThemedIcon("iconmonstr-refresh-lined-16.png", Color.Transparent, themeForegroundColor);
-                        stopIcon = CreateThemedIcon("iconmonstr-x-mark-9-16.png", Color.Transparent, themeForegroundColor);
-                        starFilledIcon = CreateThemedIcon("iconmonstr-star-filled-16.png", Color.Transparent, themeForegroundColor);
-                        starLinedIcon = CreateThemedIcon("iconmonstr-star-lined-16.png", Color.Transparent, themeForegroundColor);
-                        menuIcon = CreateThemedIcon("iconmonstr-menu-square-lined-16.png", Color.Transparent, themeForegroundColor);
+                        homeIcon = CreateThemedIcon("iconmonstr-home-7-24.png", Color.Transparent, themeForegroundColor);
+                        refreshIcon = CreateThemedIcon("iconmonstr-synchronization-3-24.png", Color.Transparent, themeForegroundColor);
+                        stopIcon = CreateThemedIcon("iconmonstr-x-mark-9-24.png", Color.Transparent, themeForegroundColor);
+                        starFilledIcon = CreateThemedIcon("iconmonstr-star-3-24.png", Color.Transparent, themeForegroundColor);
+                        starLinedIcon = CreateThemedIcon("iconmonstr-star-5-24.png", Color.Transparent, themeForegroundColor);
+                        menuIcon = CreateThemedIcon("iconmonstr-menu-square-lined-24.png", Color.Transparent, themeForegroundColor);
 
                         var themedIcon = CreateThemedIcon("iconmonstr-networking-6-16.png", Color.Transparent, themeForegroundColor);
                         if (themedIcon != null)
@@ -324,6 +324,8 @@ namespace MusicBeePlugin
 
             panel = new UserControl();
             panel.AutoScroll = false;
+            // 已删除：panel.MouseMove += Panel_MouseMove;
+            // 已删除：panel.MouseLeave += Panel_MouseLeave;
             Debug.WriteLine("Browser2: UserControl panel created");
 
             if (string.IsNullOrEmpty(defaultUrl))
@@ -341,32 +343,35 @@ namespace MusicBeePlugin
 
             locationBar = new TextBox();
             locationBar.BorderStyle = BorderStyle.FixedSingle;
-            locationBar.BackColor = themeBackgroundColor;
-            locationBar.ForeColor = themeForegroundColor;
-            locationBar.Font = font;
-            locationBar.TabStop = true;
-            locationBar.KeyDown += LocationBar_KeyDown;
+locationBar.BackColor = themeBackgroundColor;
+locationBar.ForeColor = themeForegroundColor;
+locationBar.Font = font;
+locationBar.TabStop = true;
+locationBar.KeyDown += LocationBar_KeyDown;
 
             header = new Control();
             header.Height = 43;
             header.Controls.Add(locationBarPrompt ?? new Control());
             header.Controls.Add(locationBar);
-            header.Dock = DockStyle.Top;
-            header.TabStop = false;
+header.Dock = DockStyle.Top;  // 使用 Top Dock，自动填充宽度
+header.Height = HEADER_FULL_HEIGHT;  // 固定高度 43 像素，始终显示
+header.TabStop = false;
             header.Paint += Header_Paint;
             header.Resize += Header_Resize;
-            header.MouseMove += Header_MouseMove;
             header.MouseClick += Header_MouseClick;
-
+            // 不设置 BackColor，让 Paint 事件负责绘制背景
+            
+            // 创建 browser 控件
             browser = new WebView2();
             browser.Dock = DockStyle.Fill;
             browser.TabStop = false;
             browser.NavigationStarting += Browser_NavigationStarting;
             browser.NavigationCompleted += Browser_NavigationCompleted;
             browser.SourceChanged += Browser_SourceChanged;
-
-            panel.Controls.Add(header);
+            
+            // 先添加 browser（底层），再添加 header（上层）
             panel.Controls.Add(browser);
+            panel.Controls.Add(header);
             panel.TabStop = false;
 
             ResizeHeader();
@@ -388,12 +393,15 @@ namespace MusicBeePlugin
                 System.Diagnostics.Trace.WriteLine("开始 InitializeWebView2");
                 if (webViewEnvironment == null)
                 {
-                    webViewEnvironment = await CoreWebView2Environment.CreateAsync();
+                    var envSettings = new CoreWebView2EnvironmentOptions();
+                    webViewEnvironment = await CoreWebView2Environment.CreateAsync(null, null, envSettings);
                     System.Diagnostics.Trace.WriteLine("WebView2 Environment created");
                 }
                 await browser.EnsureCoreWebView2Async(webViewEnvironment);
                 System.Diagnostics.Trace.WriteLine("WebView2 Initialize completed");
+                
                 browser.CoreWebView2.NewWindowRequested += CoreWebView2_NewWindowRequested;
+                
                 Debug.WriteLine("Browser2: WebView2 initialized");
                 AddPanelToMusicBee();
             }
@@ -404,6 +412,46 @@ namespace MusicBeePlugin
                 MessageBox.Show("WebView2 init error: " + ex.Message, "Browser2 Error");
             }
         }
+        
+        private async System.Threading.Tasks.Task InjectMouseMoveScript()
+{
+    string script = @"
+        // 监听鼠标移动
+        let lastY = -1;
+        let hideTimer = null;
+        
+        document.addEventListener('mousemove', function(e) {
+            const currentY = e.clientY;
+            
+            // 只在 Y 坐标变化时发送消息，减少频率
+            if (currentY !== lastY) {
+                lastY = currentY;
+                
+                // 发送鼠标位置到 C#
+                window.chrome.webview.postMessage({
+                    type: 'mousemove',
+                    y: currentY
+                });
+            }
+        });
+        
+        // 监听鼠标离开窗口
+        document.addEventListener('mouseleave', function(e) {
+            window.chrome.webview.postMessage({
+                type: 'mouseleave'
+            });
+        });
+    ";
+    
+    await browser.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(script);
+    Debug.WriteLine("Browser2: JavaScript mouse tracking injected");
+}
+        
+// 已废弃：JavaScript 注入方案在页面导航后失效
+// private void CoreWebView2_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+// {
+//     // 已废弃
+// }
 
         private void AddPanelToMusicBee()
         {
@@ -525,6 +573,17 @@ namespace MusicBeePlugin
         private bool isMouseOverBack;
         private bool isMouseOverForward;
         private bool isMouseOverHome;
+        
+        // Header 自动隐藏相关
+// 已废弃：Header 自动隐藏相关字段
+        // private bool isHeaderVisible = false;
+        // private System.Windows.Forms.Timer headerHideTimer;
+        // private const int HEADER_HIDE_DELAY = 2000;
+        // private const int HEADER_SHOW_TRIGGER_Y = 16;
+        // private const int HEADER_FULL_HEIGHT = 43;
+        // private const int HEADER_HIDDEN_HEIGHT = 0;
+        
+        private const int HEADER_FULL_HEIGHT = 43; // header 固定高度
 
         private Color GetThemeColor(SkinElement element, ElementComponent component)
         {
@@ -587,23 +646,33 @@ namespace MusicBeePlugin
 
             using (var originalIcon = new Bitmap(iconPath))
             {
-                // if (bgColor == Color.Transparent)
-                //     return (Bitmap)originalIcon.Clone();
-
                 Bitmap themedIcon = new Bitmap(originalIcon.Width, originalIcon.Height);
-                using (Graphics g = Graphics.FromImage(themedIcon))
+                
+                for (int y = 0; y < originalIcon.Height; y++)
                 {
-                    g.Clear(bgColor);
-                    using (ImageAttributes imageAttrs = new ImageAttributes())
+                    for (int x = 0; x < originalIcon.Width; x++)
                     {
-                        ColorMap[] colorMap = new ColorMap[1];
-                        colorMap[0] = new ColorMap();
-                        colorMap[0].OldColor = Color.Black;
-                        colorMap[0].NewColor = fgColor;
-                        imageAttrs.SetRemapTable(colorMap);
-
-                        Rectangle rect = new Rectangle(0, 0, originalIcon.Width, originalIcon.Height);
-                        g.DrawImage(originalIcon, rect, 0, 0, originalIcon.Width, originalIcon.Height, GraphicsUnit.Pixel, imageAttrs);
+                        Color pixel = originalIcon.GetPixel(x, y);
+                        
+                        // 计算黑度（0-255，值越小越黑）
+                        byte blackness = (byte)((255 - pixel.R + 255 - pixel.G + 255 - pixel.B) / 3);
+                        
+                        // 如果黑度大于 128（偏深色），则进行映射
+                        if (blackness > 128)
+                        {
+                            // 按黑度比例调整前景色的亮度
+                            byte newR = (byte)(fgColor.R * blackness / 255);
+                            byte newG = (byte)(fgColor.G * blackness / 255);
+                            byte newB = (byte)(fgColor.B * blackness / 255);
+                            
+                            // 保持原始 Alpha
+                            themedIcon.SetPixel(x, y, Color.FromArgb(pixel.A, newR, newG, newB));
+                        }
+                        else
+                        {
+                            // 非深色像素保持不变
+                            themedIcon.SetPixel(x, y, pixel);
+                        }
                     }
                 }
 
@@ -618,12 +687,26 @@ namespace MusicBeePlugin
         private void Header_Paint(object sender, PaintEventArgs e)
         {
             Color borderColor = GetThemeColor(SkinElement.SkinInputPanel, ElementComponent.ComponentBorder);
-            Debug.WriteLine($"Browser2: Header_Paint - Bg={themeBackgroundColor.ToArgb():X8}, Fg={themeForegroundColor.ToArgb():X8}, Border={borderColor.ToArgb():X8}");
+            Debug.WriteLine($"Browser2: Header_Paint - Height={header.Height}, Bg={themeBackgroundColor.ToArgb():X8}, Fg={themeForegroundColor.ToArgb():X8}, Border={borderColor.ToArgb():X8}");
 
+            // 始终绘制背景，即使高度只有 10 像素
             using (var brush = new SolidBrush(themeBackgroundColor))
             {
-                e.Graphics.FillRectangle(brush, new Rectangle(0, 0, header.Width, header.Height - 1));
+                e.Graphics.FillRectangle(brush, new Rectangle(0, 0, header.Width, header.Height));
             }
+            
+            // 如果高度小于 20 像素，只绘制背景，不绘制按钮和地址栏
+            if (header.Height < 20)
+            {
+                // 半隐藏状态，只绘制一条细线作为边框
+                using (var pen = new Pen(borderColor))
+                {
+                    e.Graphics.DrawLine(pen, 0, header.Height - 1, header.Width, header.Height - 1);
+                }
+                return;  // 提前返回，不绘制其他内容
+            }
+            
+            // 正常高度时绘制完整内容
             using (var pen = new Pen(borderColor))
             {
                 e.Graphics.DrawLine(pen, 0, header.Height - 1, header.Width, header.Height - 1);
@@ -711,11 +794,14 @@ namespace MusicBeePlugin
             }
         }
 
-        private void Header_MouseMove(object sender, MouseEventArgs e)
-        {
-            // 已删除按钮悬浮效果
-        }
-
+        // 已废弃：Header 自动隐藏相关事件处理
+        // private void Header_MouseMove(object sender, MouseEventArgs e) { ... }
+        // private void Panel_MouseLeave(object sender, EventArgs e) { ... }
+        // private void Panel_MouseMove(object sender, MouseEventArgs e) { ... }
+        // private void Browser_MouseMove(object sender, MouseEventArgs e) { ... }
+        // private void Browser_MouseLeave(object sender, EventArgs e) { ... }
+        // private void Header_MouseLeave(object sender, EventArgs e) { ... }
+        
         private void Header_MouseClick(object sender, MouseEventArgs e)
         {
             if (BrowseBackButtonBounds.Contains(e.Location))
@@ -854,17 +940,21 @@ namespace MusicBeePlugin
             }
         }
 
+        // 已废弃：地址栏焦点事件处理（用于自动隐藏功能）
+        // private void LocationBar_GotFocus(object sender, EventArgs e) { ... }
+        // private void LocationBar_LostFocus(object sender, EventArgs e) { ... }
+        
         private void LocationBar_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (locationBarPrompt != null)
-            {
-                locationBarPrompt.Dispose();
-                locationBarPrompt = null;
-            }
+{
+    if (locationBarPrompt != null)
+    {
+        locationBarPrompt.Dispose();
+        locationBarPrompt = null;
+    }
 
-            if (e.KeyCode == Keys.Return && locationBar.Text.Length > 0)
-            {
-                e.Handled = true;
+    if (e.KeyCode == Keys.Return && locationBar.Text.Length > 0)
+    {
+        e.Handled = true;
                 e.SuppressKeyPress = true;
 
                 string url = locationBar.Text;
