@@ -1,16 +1,17 @@
+using Microsoft.Web.WebView2;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
 using System;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Windows.Forms;
-using System.Collections.Generic;
-using Microsoft.Web.WebView2;
-using Microsoft.Web.WebView2.WinForms;
-using Microsoft.Web.WebView2.Core;
-using System.Diagnostics;
-using System.Resources;
 using System.IO;
+using System.Resources;
+using System.Runtime.InteropServices;
+using System.Security.Policy;
+using System.Windows.Forms;
 
 namespace MusicBeePlugin
 {
@@ -213,15 +214,75 @@ namespace MusicBeePlugin
                 SaveSettings();
             }
             
-            // 释放图标资源
+            // 取消订阅 WebView2 事件
+            if (browser != null)
+            {
+                browser.NavigationStarting -= Browser_NavigationStarting;
+                browser.NavigationCompleted -= Browser_NavigationCompleted;
+                browser.SourceChanged -= Browser_SourceChanged;
+                
+                if (browser.CoreWebView2 != null)
+                {
+                    browser.CoreWebView2.NewWindowRequested -= CoreWebView2_NewWindowRequested;
+                }
+            }
+            
+            // 释放 WebView2 资源
+            // 注意：CoreWebView2 本身没有 Dispose 方法，但调用 browser.Dispose() 会清理相关资源
+            browser?.Dispose();
+            browser = null;
+            
+            // 释放所有图标资源
             backIcon?.Dispose();
+            backIcon = null;
             forwardIcon?.Dispose();
+            forwardIcon = null;
             homeIcon?.Dispose();
+            homeIcon = null;
             refreshIcon?.Dispose();
+            refreshIcon = null;
             stopIcon?.Dispose();
+            stopIcon = null;
             starFilledIcon?.Dispose();
+            starFilledIcon = null;
             starLinedIcon?.Dispose();
+            starLinedIcon = null;
             menuIcon?.Dispose();
+            menuIcon = null;
+            
+            // 释放 faviconImage
+            faviconImage?.Dispose();
+            faviconImage = null;
+            
+            // 释放所有书签中的 Icon
+            foreach (var bookmark in favourites)
+            {
+                bookmark.Icon?.Dispose();
+            }
+            favourites.Clear();
+            
+            // 释放上下文菜单
+            bookmarkContextMenu?.Dispose();
+            bookmarkContextMenu = null;
+            
+            // 释放 locationBarPrompt
+            locationBarPrompt?.Dispose();
+            locationBarPrompt = null;
+            
+            // 释放 locationBar
+            locationBar?.Dispose();
+            locationBar = null;
+            
+            // 释放 header
+            header?.Dispose();
+            header = null;
+            
+            // 释放 panel
+            panel?.Dispose();
+            panel = null;
+            
+            // webViewEnvironment 不需要释放 (CoreWebView2Environment 未实现 IDisposable)
+            webViewEnvironment = null;
         }
 
         public void Uninstall()
@@ -299,9 +360,21 @@ namespace MusicBeePlugin
                 panel = null;
                 InitializeBrowser();
             }
-            else if (panel != null && !panel.IsDisposed)
+            else
             {
+                // WebView2 存在但 panel 已被移除，重新添加并加载首页
+                Debug.WriteLine("Browser2: WebView2 exists, reusing...");
                 AddPanelToMusicBee();
+                
+                // 加载默认首页
+                text = LoadSettings();
+                if (!string.IsNullOrEmpty(text))
+                {
+                    Debug.WriteLine("Browser2: Loading home page: " + text);
+                    pendingUrl = text;
+                    TryNavigate();
+                }
+                return; // 已经处理完毕，直接返回
             }
             if (string.IsNullOrEmpty(text))
             {
@@ -412,122 +485,12 @@ header.TabStop = false;
                 MessageBox.Show("WebView2 init error: " + ex.Message, "Browser2 Error");
             }
         }
-        
-        private async System.Threading.Tasks.Task InjectMouseMoveScript()
-{
-    string script = @"
-        // 监听鼠标移动
-        let lastY = -1;
-        let hideTimer = null;
-        
-        document.addEventListener('mousemove', function(e) {
-            const currentY = e.clientY;
-            
-            // 只在 Y 坐标变化时发送消息，减少频率
-            if (currentY !== lastY) {
-                lastY = currentY;
-                
-                // 发送鼠标位置到 C#
-                window.chrome.webview.postMessage({
-                    type: 'mousemove',
-                    y: currentY
-                });
-            }
-        });
-        
-        // 监听鼠标离开窗口
-        document.addEventListener('mouseleave', function(e) {
-            window.chrome.webview.postMessage({
-                type: 'mouseleave'
-            });
-        });
-    ";
-    
-    await browser.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(script);
-    Debug.WriteLine("Browser2: JavaScript mouse tracking injected");
-}
-        
-// 已废弃：JavaScript 注入方案在页面导航后失效
-// private void CoreWebView2_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
-// {
-//     // 已废弃
-// }
 
         private void AddPanelToMusicBee()
         {
             mbApiInterface.MB_AddPanel(panel, PluginPanelDock.MainPanel);
             Debug.WriteLine("Browser2: Panel added to MainPanel");
-            
-            // 暂不实现隐藏标题栏功能
-            // HidePanelTitleBar();
-            
             TryNavigate();
-        }
-        
-        private void HidePanelTitleBar()
-        {
-            try
-            {
-                // 延迟执行，确保面板已经添加到 MusicBee
-                System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-                timer.Interval = 1500;
-                timer.Tick += (s, e) =>
-                {
-                    timer.Stop();
-                    timer.Dispose();
-                    
-                    if (panel != null && panel.Parent != null)
-                    {
-                        Debug.WriteLine($"Browser2: Panel parent is {panel.Parent.GetType().FullName}");
-                        Debug.WriteLine($"Browser2: Panel bounds: {panel.Bounds}");
-                        Debug.WriteLine($"Browser2: Panel location: {panel.Location}");
-                        
-                        // 检测 panel 是否有向上的偏移（这表示有标题栏区域）
-                        if (panel.Location.Y > 0)
-                        {
-                            Debug.WriteLine($"Browser2: Detected title bar offset: {panel.Location.Y} pixels");
-                            
-                            // 方法 1：将 panel 向上移动，覆盖标题栏区域
-                            Debug.WriteLine("Browser2: Attempting to reposition panel to cover title bar area");
-                            
-                            // 计算新的位置和大小：向上移动 panel，并增加高度以补偿
-                            int titleBarHeight = panel.Location.Y;
-                            Point newLocation = new Point(panel.Location.X, 0);
-                            Size newSize = new Size(panel.Size.Width, panel.Size.Height + titleBarHeight);
-                            
-                            Debug.WriteLine($"Browser2: Moving panel from Y={panel.Location.Y} to Y=0, height from {panel.Size.Height} to {newSize.Height}");
-                            
-                            // 应用新的位置和大小
-                            panel.Location = newLocation;
-                            panel.Size = newSize;
-                            
-                            Debug.WriteLine($"Browser2: New panel bounds: {panel.Bounds}");
-                            Debug.WriteLine($"Browser2: New panel location: {panel.Location}");
-                        }
-                        
-                        // 尝试获取 MusicBee 主窗口并修改其样式
-                        Control parent = panel.Parent;
-                        while (parent != null)
-                        {
-                            Debug.WriteLine($"Browser2: Checking parent: {parent.GetType().FullName}");
-                            
-                            // 如果找到顶层窗口，尝试修改其样式
-                            if (parent is Form parentForm)
-                            {
-                                Debug.WriteLine($"Browser2: Found Form: {parentForm.Text}");
-                                // 可以尝试修改窗口样式，但这可能影响 MusicBee 整体 UI
-                            }
-                            
-                            parent = parent.Parent;
-                        }
-                    }
-                };
-                timer.Start();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Browser2: HidePanelTitleBar error: {ex.Message}");
-            }
         }
         
         private CoreWebView2Environment webViewEnvironment;
@@ -762,6 +725,8 @@ header.TabStop = false;
         private void Header_Resize(object sender, EventArgs e)
         {
             ResizeHeader();
+            // 重要：触发重绘，确保图标位置正确更新
+            header.Invalidate();
         }
 
         private void ResizeHeader()
@@ -1090,6 +1055,28 @@ header.TabStop = false;
         public void CloseBrowser(object sender, EventArgs e)
         {
             SaveSettings();
+            
+            // 清除网页内容，但不销毁 WebView2
+            if (browser?.CoreWebView2 != null)
+            {
+                // 导航到空白页，清除网页内容
+                browser.CoreWebView2.Navigate("about:blank");
+            }
+            
+            // 重置状态
+            activeUrl = null;
+            isLoading = false;
+            faviconImage?.Dispose();
+            faviconImage = null;
+            currentIsFavourite = false;
+            
+            // 重置地址栏
+            if (locationBar != null)
+            {
+                locationBar.Text = "";
+            }
+
+
             if (panel != null)
             {
                 mbApiInterface.MB_RemovePanel(panel);

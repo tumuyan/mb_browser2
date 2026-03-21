@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
     <OutputType>Library</OutputType>
@@ -65,9 +65,10 @@
       <FilesToCopy Include="$(TargetDir)*.config" />
       <FilesToCopy Include="$(TargetDir)*.xml" />
       <FilesToCopy Include="$(TargetDir)Resources\*.png" />
+      <ResourceFiles Include="$(ProjectDir)Resources\*.png" />
     </ItemGroup>
     <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="A:\Media\MusicBee\Plugins" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
     <MakeDir Directories="A:\Media\MusicBee\Plugins\Resources" Condition="!Exists('A:\Media\MusicBee\Plugins\Resources')" />
-    <Copy SourceFiles="$(ProjectDir)Resources\*.png" DestinationFolder="A:\Media\MusicBee\Plugins\Resources" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
+    <Copy SourceFiles="@(ResourceFiles)" DestinationFolder="A:\Media\MusicBee\Plugins\Resources" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
   </Target>
 </Project>
