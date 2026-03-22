@@ -88,7 +88,7 @@ namespace MusicBeePlugin
             about.Type = PluginType.WebBrowser;
             about.VersionMajor = 1;
             about.VersionMinor = 0;
-            about.Revision = 1;
+            about.Revision = 2;
             about.MinInterfaceVersion = MinInterfaceVersion;
             about.MinApiRevision = MinApiRevision;
             about.ReceiveNotifications = (ReceiveNotificationFlags.PlayerEvents | ReceiveNotificationFlags.TagEvents);
@@ -350,29 +350,52 @@ namespace MusicBeePlugin
 
         public void OpenBrowser(object sender, EventArgs e)
         {
-            Debug.WriteLine("Browser2: OpenBrowser called");
-            string text = null;
+            Debug.WriteLine("Browser2: OpenBrowser called, loadOnceUrl: "+loadOnceUrl);
+            string text = loadOnceUrl;
+            loadOnceUrl = null;
             if (browser == null || browser.CoreWebView2 == null)
             {
-                text = LoadSettings();
+                if (text == null)
+                {
+                    text = LoadSettings();
+                }
                 Debug.WriteLine("Browser2: LoadSettings returned: " + (text ?? "null"));
+                Debug.WriteLine("Browser2: Before InitializeBrowser, pendingUrl=" + (pendingUrl ?? "null"));
                 browser = null;
                 panel = null;
                 InitializeBrowser();
+                Debug.WriteLine("Browser2: After InitializeBrowser, pendingUrl=" + (pendingUrl ?? "null"));
             }
             else
             {
-                // WebView2 存在但 panel 已被移除，重新添加并加载首页
-                Debug.WriteLine("Browser2: WebView2 exists, reusing...");
+                // WebView2 存在但 panel 已被移除，重新添加面板
+                Debug.WriteLine("Browser2: WebView2 exists, reusing, text=" + (text ?? "null"));
+                
+                // 设置 WebView2 可见，恢复渲染
+                if (browser != null)
+                {
+                    browser.Visible = true;
+                    Debug.WriteLine("Browser2: Set WebView2 Visible = true");
+                }
+                
                 AddPanelToMusicBee();
                 
-                // 加载默认首页
-                text = LoadSettings();
+                // 如果有指定 URL，则加载指定 URL；否则不加载（因为可能已经在 Navigate 中加载过了）
                 if (!string.IsNullOrEmpty(text))
                 {
-                    Debug.WriteLine("Browser2: Loading home page: " + text);
+                    Debug.WriteLine("Browser2: Loading specified URL: " + text);
                     pendingUrl = text;
                     TryNavigate();
+                }
+                else
+                {
+                    Debug.WriteLine("Browser2: No URL specified, skipping navigation (may have been loaded in Navigate method)");
+                    // 切换回来时，更新地址栏显示当前的 URL
+                    if (!string.IsNullOrEmpty(activeUrl) && locationBar != null)
+                    {
+                        Debug.WriteLine("Browser2: Restoring location bar text to: " + activeUrl);
+                        locationBar.Text = activeUrl;
+                    }
                 }
                 return; // 已经处理完毕，直接返回
             }
@@ -505,16 +528,17 @@ header.TabStop = false;
         {
             if (browser?.CoreWebView2 == null)
             {
-                System.Diagnostics.Trace.WriteLine("WebView2 not ready, reinitializing");
+                Debug.WriteLine("Browser2: TryNavigate - WebView2 not ready");
                 InitializeWebView2AndAddPanel();
                 return;
             }
-            System.Diagnostics.Trace.WriteLine("WebView2 ready, attempting navigation");
+            Debug.WriteLine("Browser2: TryNavigate - WebView2 ready, pendingUrl=" + (pendingUrl ?? "null"));
             if (string.IsNullOrEmpty(pendingUrl))
             {
+                Debug.WriteLine("Browser2: TryNavigate - pendingUrl is empty, returning");
                 return;
             }
-            System.Diagnostics.Trace.WriteLine("开始 NavigateTo " + pendingUrl);
+            Debug.WriteLine("Browser2: TryNavigate - Calling NavigateTo with: " + pendingUrl);
             NavigateTo(pendingUrl);
             pendingUrl = null;
         }
@@ -933,16 +957,19 @@ header.TabStop = false;
             }
         }
 
+        private string loadOnceUrl;
+
         public void Navigate(string url)
         {
+            Debug.WriteLine("Browser2: Navigate called with URL: " + url);
             if (panel == null)
             {
-                defaultUrl = url;
+                loadOnceUrl = url;
                 return;
             }
             ShowNavigationTarget(url);
             browser.Focus();
-            NavigateTo(locationBar.Text);
+            NavigateTo(url);
         }
 
         private void NavigateTo(string url)
@@ -979,14 +1006,23 @@ header.TabStop = false;
 
                 if (!string.IsNullOrEmpty(url))
                 {
-
-                    Debug.WriteLine("开始 NavigateTo " + url);
-                    browser.Source = new Uri(url);
+                    Debug.WriteLine("Browser2: NavigateTo - browser.CoreWebView2 is " + (browser?.CoreWebView2 == null ? "null" : "not null"));
+                    if (browser?.CoreWebView2 != null)
+                    {
+                        Debug.WriteLine("Browser2: Calling CoreWebView2.Navigate(" + url + ")");
+                        browser.CoreWebView2.Navigate(url);
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Browser2: Setting browser.Source = " + url);
+                        browser.Source = new Uri(url);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Navigation error: " + ex.Message);
+                Debug.WriteLine("Stack trace: " + ex.StackTrace);
             }
         }
 
@@ -1054,33 +1090,30 @@ header.TabStop = false;
 
         public void CloseBrowser(object sender, EventArgs e)
         {
+            Debug.WriteLine("Browser2: CloseBrowser called");
             SaveSettings();
             
-            // 清除网页内容，但不销毁 WebView2
-            if (browser?.CoreWebView2 != null)
+            // 重置 loadOnceUrl
+            loadOnceUrl = null;
+            
+            // 设置 WebView2 不可见，停止渲染
+            if (browser != null)
             {
-                // 导航到空白页，清除网页内容
-                browser.CoreWebView2.Navigate("about:blank");
+                browser.Visible = false;
+                Debug.WriteLine("Browser2: Set WebView2 Visible = false");
             }
             
-            // 重置状态
-            activeUrl = null;
+            // 不调用 MB_RemovePanel，让 MusicBee 自己管理面板的显示/隐藏
+            // 这样切换标签页时可以保持网页状态
+            // 同时保留 activeUrl 和 locationBar.Text，以便切换回来时显示
+            
+            // 重置状态（但保留 activeUrl 和 locationBar.Text）
             isLoading = false;
             faviconImage?.Dispose();
             faviconImage = null;
             currentIsFavourite = false;
             
-            // 重置地址栏
-            if (locationBar != null)
-            {
-                locationBar.Text = "";
-            }
 
-
-            if (panel != null)
-            {
-                mbApiInterface.MB_RemovePanel(panel);
-            }
         }
 
         private void ScanStarting(object sender, EventArgs e)
