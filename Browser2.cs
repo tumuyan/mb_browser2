@@ -28,9 +28,7 @@ namespace MusicBeePlugin
 
         private bool isLoading;
         private string activeUrl;
-        private string defaultUrl;
         
-        // 记录浏览器是否应该可见
         private bool shouldBrowserBeVisible = false;
 
         private Bitmap faviconImage;
@@ -45,8 +43,7 @@ namespace MusicBeePlugin
         private Bitmap starLinedIcon;
         private Bitmap menuIcon;
 
-        private List<Bookmark> favourites = new List<Bookmark>();
-        private int settingsVersion = 3;
+        private BrowserSettings settings = new BrowserSettings();
         private bool isSettingsDirty;
 
         private ToolStripMenuItem playNowMenuItem;
@@ -60,22 +57,6 @@ namespace MusicBeePlugin
 
         private Color themeForegroundColor;
         private Color themeBackgroundColor;
-
-        private struct Bookmark
-        {
-            public string Url;
-            public string Name;
-            public Bitmap Icon;
-            public bool Custom;
-
-            public Bookmark(string url, string name, Bitmap icon, bool custom = false)
-            {
-                Url = url;
-                Name = name;
-                Icon = icon;
-                Custom = custom;
-            }
-        }
 
         public PluginInfo Initialise(IntPtr apiInterfacePtr)
         {
@@ -111,9 +92,8 @@ namespace MusicBeePlugin
                 prompt.Text = "Home Page";
                 TextBox textBox = new TextBox();
                 textBox.Bounds = new Rectangle(prompt.Width+50, 0, 400, textBox.Height);
-                textBox.Text =  defaultUrl ?? "";
-                //textBox.TextChanged += new EventHandler(textBox_TextChanged); // 绑定 TextChanged 事件
-                textBox.TextChanged += (s, e) => { defaultUrl = textBox.Text; isSettingsDirty = true; };
+                textBox.Text =  settings.DefaultUrl ?? "";
+                textBox.TextChanged += (s, e) => { settings.DefaultUrl = textBox.Text; isSettingsDirty = true; };
                 configPanel.Controls.AddRange(new Control[] { prompt, textBox });
             }
             return false;
@@ -122,92 +102,17 @@ namespace MusicBeePlugin
 
         public void SaveSettings()
         {
-            string path = mbApiInterface.Setting_GetPersistentStoragePath() + "Browser2Settings.dat";
-            try
-            {
-                using (var fs = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write))
-                using (var writer = new System.IO.BinaryWriter(fs))
-                {
-                    writer.Write(settingsVersion);
-                    writer.Write(defaultUrl ?? "");
-                    writer.Write(favourites.Count);
-                    foreach (var fav in favourites)
-                    {
-                        writer.Write(fav.Url);
-                        writer.Write(string.IsNullOrEmpty(fav.Name) ? "No Title" : fav.Name);
-                        if (fav.Icon != null)
-                        {
-                            using (var ms = new System.IO.MemoryStream())
-                            {
-                                fav.Icon.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                                var bytes = ms.ToArray();
-                                writer.Write(bytes.Length);
-                                writer.Write(bytes);
-                            }
-                        }
-                        else
-                        {
-                            writer.Write(0);
-                        }
-                    }
-                }
-            }
-            catch { }
+            string path = mbApiInterface.Setting_GetPersistentStoragePath() + "Browser2Settings.json";
+            SettingsManager.Save(path, settings);
             isSettingsDirty = false;
         }
 
         private string LoadSettings()
         {
             Debug.WriteLine("加载设置");
-            string result = null;
-            string path = mbApiInterface.Setting_GetPersistentStoragePath() + "Browser2Settings.dat";
-            if (System.IO.File.Exists(path))
-            {
-                try
-                {
-                    using (var fs = new System.IO.FileStream(path, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                    using (var reader = new System.IO.BinaryReader(fs))
-                    {
-                        settingsVersion = reader.ReadInt32();
-                        result = defaultUrl = reader.ReadString();
-                        int count = reader.ReadInt32();
-                        favourites.Clear();
-                        for (int i = 0; i < count; i++)
-                        {
-                            var bookmark = new Bookmark
-                            {
-                                Url = reader.ReadString(),
-                                Name = reader.ReadString()
-                            };
-                            int iconSize = reader.ReadInt32();
-                            if (iconSize > 0)
-                            {
-                                byte[] iconData = reader.ReadBytes(iconSize);
-                                using (var ms = new System.IO.MemoryStream(iconData))
-                                {
-                                    bookmark.Icon = new Bitmap(ms);
-                                }
-                            }
-                            favourites.Add(bookmark);
-                        }
-                    }
-                }
-                catch { }
-            }
-            if (settingsVersion < 3)
-            {
-                InitializeV3Favorites();
-                result = "http://en.wikipedia.org/wiki/Special:Search?search=<artist>";
-            }
-            return result;
-        }
-
-        private void InitializeV3Favorites()
-        {
-            if (settingsVersion < 3)
-            {
-                settingsVersion = 3;
-            }
+            string jsonPath = mbApiInterface.Setting_GetPersistentStoragePath() + "Browser2Settings.json";
+            settings = SettingsManager.Load<BrowserSettings>(jsonPath);
+            return settings.DefaultUrl;
         }
 
         public void Close(PluginCloseReason reason)
@@ -257,12 +162,8 @@ namespace MusicBeePlugin
             faviconImage?.Dispose();
             faviconImage = null;
             
-            // 释放所有书签中的 Icon
-            foreach (var bookmark in favourites)
-            {
-                bookmark.Icon?.Dispose();
-            }
-            favourites.Clear();
+            // 清理书签列表
+            settings.Bookmarks.Clear();
             
             // 释放上下文菜单
             bookmarkContextMenu?.Dispose();
@@ -432,7 +333,7 @@ namespace MusicBeePlugin
             // 已删除：panel.MouseLeave += Panel_MouseLeave;
             Debug.WriteLine("Browser2: UserControl panel created");
 
-            if (string.IsNullOrEmpty(defaultUrl))
+            if (string.IsNullOrEmpty(settings.DefaultUrl))
             {
                 locationBarPrompt = new Control();
                 locationBarPrompt.BackColor = Color.White;
@@ -890,9 +791,9 @@ header.TabStop = false;
             }
             else if (HomeButtonBounds.Contains(e.Location))
             {
-                if (!string.IsNullOrEmpty(defaultUrl))
+                if (!string.IsNullOrEmpty(settings.DefaultUrl))
                 {
-                    browser.CoreWebView2?.Navigate(defaultUrl);
+                    browser.CoreWebView2?.Navigate(settings.DefaultUrl);
                 }
             }
             else if (RefreshStopButtonBounds.Contains(e.Location))
@@ -921,9 +822,9 @@ header.TabStop = false;
                 if (!string.IsNullOrEmpty(locationBar.Text))
                 {
                     bool found = false;
-                    for (int i = 0; i < favourites.Count; i++)
+                    for (int i = 0; i < settings.Bookmarks.Count; i++)
                     {
-                        if (string.Compare(favourites[i].Url, locationBar.Text, StringComparison.OrdinalIgnoreCase) == 0)
+                        if (string.Compare(settings.Bookmarks[i].Url, locationBar.Text, StringComparison.OrdinalIgnoreCase) == 0)
                         {
                             found = true;
                             RemoveFavourite(i);
@@ -933,7 +834,7 @@ header.TabStop = false;
                     if (!found)
                     {
                         string title = browser.CoreWebView2?.DocumentTitle ?? "No title";
-                        favourites.Add(new Bookmark(locationBar.Text, title, faviconImage != null ? (Bitmap)faviconImage.Clone() : null));
+                        settings.Bookmarks.Add(new Bookmark(locationBar.Text, title));
                         SaveSettings();
                         mbApiInterface.MB_SetBackgroundTaskMessage("Bookmark has been saved");
                         currentIsFavourite = true;
@@ -954,23 +855,19 @@ header.TabStop = false;
             }
             bookmarkContextMenu.Items.Clear();
 
-            if (favourites.Count == 0)
+            if (settings.Bookmarks.Count == 0)
             {
                 bookmarkContextMenu.Items.Add("(No bookmarks)");
             }
             else
             {
-                foreach (var fav in favourites)
+                foreach (var fav in settings.Bookmarks)
                 {
                     var item = new ToolStripMenuItem
                     {
                         Text = fav.Name,
                         ToolTipText = fav.Url
                     };
-                    if (fav.Icon != null)
-                    {
-                        item.Image = fav.Icon;
-                    }
                     item.Click += (s, e) =>
                     {
                         NavigateTo(fav.Url);
@@ -985,8 +882,8 @@ header.TabStop = false;
 
         private void RemoveFavourite(int index)
         {
-            var bookmark = favourites[index];
-            favourites.RemoveAt(index);
+            var bookmark = settings.Bookmarks[index];
+            settings.Bookmarks.RemoveAt(index);
             SaveSettings();
             SetLocationBarText(locationBar.Text);
             mbApiInterface.MB_SetBackgroundTaskMessage("Bookmark '" + bookmark.Name + "' removed");
@@ -1154,7 +1051,7 @@ header.TabStop = false;
             bool wasFavourite = currentIsFavourite;
             currentIsFavourite = false;
 
-            foreach (var fav in favourites)
+            foreach (var fav in settings.Bookmarks)
             {
                 if (string.Compare(fav.Url, value, StringComparison.OrdinalIgnoreCase) == 0)
                 {
