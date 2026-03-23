@@ -29,6 +29,9 @@ namespace MusicBeePlugin
         private bool isLoading;
         private string activeUrl;
         private string defaultUrl;
+        
+        // 记录浏览器是否应该可见
+        private bool shouldBrowserBeVisible = false;
 
         private Bitmap faviconImage;
         private bool currentIsFavourite;
@@ -351,6 +354,11 @@ namespace MusicBeePlugin
         public void OpenBrowser(object sender, EventArgs e)
         {
             Debug.WriteLine("Browser2: OpenBrowser called, loadOnceUrl: "+loadOnceUrl);
+            
+            // 记录状态：浏览器应该可见
+            shouldBrowserBeVisible = true;
+            Debug.WriteLine($"Browser2: Set shouldBrowserBeVisible = true");
+            
             string text = loadOnceUrl;
             loadOnceUrl = null;
             if (browser == null || browser.CoreWebView2 == null)
@@ -465,6 +473,10 @@ header.TabStop = false;
             browser.NavigationCompleted += Browser_NavigationCompleted;
             browser.SourceChanged += Browser_SourceChanged;
             
+            // 注册 VisibleChanged 事件，自动处理可见性变化
+            panel.VisibleChanged += Panel_VisibleChanged;
+            // browser.VisibleChanged += Browser_VisibleChanged;
+            
             // 先添加 browser（底层），再添加 header（上层）
             panel.Controls.Add(browser);
             panel.Controls.Add(header);
@@ -474,6 +486,56 @@ header.TabStop = false;
             Debug.WriteLine("Browser2: InitializeBrowser completed, initializing WebView2");
 
             InitializeWebView2AndAddPanel();
+        }
+
+        private void RegisterFormResizeEvent()
+        {
+            if (panel?.FindForm() != null)
+            {
+                panel.FindForm().Resize += MainForm_Resize;
+                Debug.WriteLine("Browser2: Registered Form.Resize event");
+            }
+        }
+
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            Form form = (Form)sender;
+            Debug.WriteLine($"===== Form.Resize =====");
+            Debug.WriteLine($"  WindowState = {form.WindowState}");
+            Debug.WriteLine($"  shouldBrowserBeVisible = {shouldBrowserBeVisible}");
+            Debug.WriteLine($"  panel.Visible = {panel?.Visible}");
+            Debug.WriteLine($"  browser.Visible = {browser?.Visible}");
+            Debug.WriteLine("========================");
+            
+            if (browser == null) return;
+            
+            if (form.WindowState == FormWindowState.Minimized)
+            {
+                // 最小化时，总是隐藏 browser
+                if (browser.Visible)
+                {
+                    browser.Visible = false;
+                    Debug.WriteLine("Browser2: MusicBee minimized, set browser.Visible = false");
+                }
+            }
+            else if (form.WindowState == FormWindowState.Normal || form.WindowState == FormWindowState.Maximized)
+            {
+                Debug.WriteLine("Browser2: MusicBee restored");
+                // 只有在 shouldBrowserBeVisible = true 时才恢复 browser.Visible
+                if (shouldBrowserBeVisible && !browser.Visible)
+                {
+                    browser.Visible = true;
+                    Debug.WriteLine("Browser2: shouldBrowserBeVisible = true, set browser.Visible = true");
+                }
+                else if (!shouldBrowserBeVisible)
+                {
+                    Debug.WriteLine("Browser2: shouldBrowserBeVisible = false, keep browser.Visible = false");
+                }
+                else
+                {
+                    Debug.WriteLine("Browser2: browser.Visible already true, no change needed");
+                }
+            }
         }
 
         private async void InitializeWebView2AndAddPanel()
@@ -513,6 +575,10 @@ header.TabStop = false;
         {
             mbApiInterface.MB_AddPanel(panel, PluginPanelDock.MainPanel);
             Debug.WriteLine("Browser2: Panel added to MainPanel");
+            
+            // 注册 Form Resize 事件
+            RegisterFormResizeEvent();
+            
             TryNavigate();
         }
         
@@ -541,6 +607,29 @@ header.TabStop = false;
             Debug.WriteLine("Browser2: TryNavigate - Calling NavigateTo with: " + pendingUrl);
             NavigateTo(pendingUrl);
             pendingUrl = null;
+        }
+
+        private void Panel_VisibleChanged(object sender, EventArgs e)
+        {
+            Control panel = (Control)sender;
+            Debug.WriteLine($"===== Panel_VisibleChanged =====");
+            Debug.WriteLine($"  panel.Visible = {panel.Visible}");
+            Debug.WriteLine($"  browser != null = {browser != null}");
+            Debug.WriteLine($"  browser.Visible = {browser?.Visible}");
+            Debug.WriteLine($"================================");
+            
+            // 当面板隐藏时，自动设置 WebView2 不可见
+            if (!panel.Visible && browser != null)
+            {
+                browser.Visible = false;
+                Debug.WriteLine("Browser2: Panel hidden, set browser.Visible = false");
+            }
+            // 当面板显示时，自动设置 WebView2 可见
+            else if (panel.Visible && browser != null)
+            {
+                browser.Visible = true;
+                Debug.WriteLine("Browser2: Panel shown, set browser.Visible = true");
+            }
         }
 
         // 按钮布局常量
@@ -674,7 +763,7 @@ header.TabStop = false;
         private void Header_Paint(object sender, PaintEventArgs e)
         {
             Color borderColor = GetThemeColor(SkinElement.SkinInputPanel, ElementComponent.ComponentBorder);
-            Debug.WriteLine($"Browser2: Header_Paint - Height={header.Height}, Bg={themeBackgroundColor.ToArgb():X8}, Fg={themeForegroundColor.ToArgb():X8}, Border={borderColor.ToArgb():X8}");
+            //Debug.WriteLine($"Browser2: Header_Paint - Height={header.Height}, Bg={themeBackgroundColor.ToArgb():X8}, Fg={themeForegroundColor.ToArgb():X8}, Border={borderColor.ToArgb():X8}");
 
             // 始终绘制背景，即使高度只有 10 像素
             using (var brush = new SolidBrush(themeBackgroundColor))
@@ -782,14 +871,6 @@ header.TabStop = false;
                 }
             }
         }
-
-        // 已废弃：Header 自动隐藏相关事件处理
-        // private void Header_MouseMove(object sender, MouseEventArgs e) { ... }
-        // private void Panel_MouseLeave(object sender, EventArgs e) { ... }
-        // private void Panel_MouseMove(object sender, MouseEventArgs e) { ... }
-        // private void Browser_MouseMove(object sender, MouseEventArgs e) { ... }
-        // private void Browser_MouseLeave(object sender, EventArgs e) { ... }
-        // private void Header_MouseLeave(object sender, EventArgs e) { ... }
         
         private void Header_MouseClick(object sender, MouseEventArgs e)
         {
@@ -1093,8 +1174,9 @@ header.TabStop = false;
             Debug.WriteLine("Browser2: CloseBrowser called");
             SaveSettings();
             
-            // 重置 loadOnceUrl
-            loadOnceUrl = null;
+            // 记录状态：浏览器不应该可见
+            shouldBrowserBeVisible = false;
+            Debug.WriteLine($"Browser2: Set shouldBrowserBeVisible = false");
             
             // 设置 WebView2 不可见，停止渲染
             if (browser != null)
