@@ -24,6 +24,7 @@ namespace MusicBeePlugin
         public int Version { get; set; } = 4;
         public string DefaultUrl { get; set; }
         public List<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+        public double ZoomFactor { get; set; } = 1.0;
     }
 
     public static class SettingsManager

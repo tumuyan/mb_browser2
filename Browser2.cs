@@ -128,6 +128,7 @@ namespace MusicBeePlugin
                 browser.NavigationStarting -= Browser_NavigationStarting;
                 browser.NavigationCompleted -= Browser_NavigationCompleted;
                 browser.SourceChanged -= Browser_SourceChanged;
+                browser.ZoomFactorChanged -= Browser_ZoomFactorChanged;
                 
                 if (browser.CoreWebView2 != null)
                 {
@@ -460,6 +461,12 @@ header.TabStop = false;
                 System.Diagnostics.Trace.WriteLine("WebView2 Initialize completed");
                 
                 browser.CoreWebView2.NewWindowRequested += CoreWebView2_NewWindowRequested;
+                browser.ZoomFactorChanged += Browser_ZoomFactorChanged;
+                
+                if (settings.ZoomFactor > 0 && settings.ZoomFactor != 1.0)
+                {
+                    browser.ZoomFactor = settings.ZoomFactor;
+                }
                 
                 Debug.WriteLine("Browser2: WebView2 initialized");
                 AddPanelToMusicBee();
@@ -1018,6 +1025,16 @@ header.TabStop = false;
             activeUrl = browser.Source?.ToString();
             header.Invalidate();
             Debug.WriteLine("Browser2: NavigationCompleted - " + (e.IsSuccess ? "Success" : "Failed: " + e.WebErrorStatus));
+        }
+
+        private void Browser_ZoomFactorChanged(object sender, EventArgs e)
+        {
+            if (browser != null)
+            {
+                settings.ZoomFactor = browser.ZoomFactor;
+                isSettingsDirty = true;
+                Debug.WriteLine("Browser2: ZoomFactor changed to " + browser.ZoomFactor);
+            }
         }
 
         private void Browser_SourceChanged(object sender, CoreWebView2SourceChangedEventArgs e)
