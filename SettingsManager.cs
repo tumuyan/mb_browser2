@@ -21,11 +21,12 @@ namespace MusicBeePlugin
 
     public class BrowserSettings
     {
-        public int Version { get; set; } = 4;
+        public int Version { get; set; } = 5;
         public string DefaultUrl { get; set; }
         public List<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
         public double ZoomFactor { get; set; } = 1.0;
         public bool AutoSaveZoom { get; set; } = true;
+        public bool ShowAddressBar { get; set; } = true;
     }
 
     public static class SettingsManager

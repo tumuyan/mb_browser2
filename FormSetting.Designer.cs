@@ -20,6 +20,8 @@ namespace MusicBeePlugin
             this.lblHomePage = new System.Windows.Forms.Label();
             this.txtDefaultUrl = new System.Windows.Forms.TextBox();
             this.chkAutoSaveZoom = new System.Windows.Forms.CheckBox();
+            this.chkShowAddressBar = new System.Windows.Forms.CheckBox();
+            this.lblRestartHint = new System.Windows.Forms.Label();
             this.btnSave = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
             this.SuspendLayout();
@@ -50,10 +52,28 @@ namespace MusicBeePlugin
             this.chkAutoSaveZoom.Text = Strings.AutoSaveZoom;
             this.chkAutoSaveZoom.UseVisualStyleBackColor = true;
             // 
+            // chkShowAddressBar
+            // 
+            this.chkShowAddressBar.AutoSize = true;
+            this.chkShowAddressBar.Location = new System.Drawing.Point(15, 70);
+            this.chkShowAddressBar.Name = "chkShowAddressBar";
+            this.chkShowAddressBar.Size = new System.Drawing.Size(100, 19);
+            this.chkShowAddressBar.Text = Strings.ShowAddressBar;
+            this.chkShowAddressBar.UseVisualStyleBackColor = true;
+            // 
+            // lblRestartHint
+            // 
+            this.lblRestartHint.AutoSize = true;
+            this.lblRestartHint.ForeColor = System.Drawing.Color.Gray;
+            this.lblRestartHint.Location = new System.Drawing.Point(12, 95);
+            this.lblRestartHint.Name = "lblRestartHint";
+            this.lblRestartHint.Size = new System.Drawing.Size(200, 15);
+            this.lblRestartHint.Text = Strings.RestartHint;
+            // 
             // btnSave
             // 
             this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSave.Location = new System.Drawing.Point(313, 80);
+            this.btnSave.Location = new System.Drawing.Point(313, 115);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(75, 25);
             this.btnSave.TabIndex = 2;
@@ -63,7 +83,7 @@ namespace MusicBeePlugin
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnCancel.Location = new System.Drawing.Point(394, 80);
+            this.btnCancel.Location = new System.Drawing.Point(394, 115);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 25);
             this.btnCancel.TabIndex = 3;
@@ -76,7 +96,9 @@ namespace MusicBeePlugin
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(480, 120);
+            this.ClientSize = new System.Drawing.Size(480, 152);
+            this.Controls.Add(this.lblRestartHint);
+            this.Controls.Add(this.chkShowAddressBar);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.chkAutoSaveZoom);
@@ -99,6 +121,8 @@ namespace MusicBeePlugin
         private System.Windows.Forms.Label lblHomePage;
         private System.Windows.Forms.TextBox txtDefaultUrl;
         private System.Windows.Forms.CheckBox chkAutoSaveZoom;
+        private System.Windows.Forms.CheckBox chkShowAddressBar;
+        private System.Windows.Forms.Label lblRestartHint;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;
     }

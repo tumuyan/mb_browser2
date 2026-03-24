@@ -74,5 +74,17 @@ namespace MusicBeePlugin {
                 return ResourceManager.GetString("Cancel", resourceCulture);
             }
         }
+        
+        internal static string RestartHint {
+            get {
+                return ResourceManager.GetString("RestartHint", resourceCulture);
+            }
+        }
+        
+        internal static string ShowAddressBar {
+            get {
+                return ResourceManager.GetString("ShowAddressBar", resourceCulture);
+            }
+        }
     }
 }

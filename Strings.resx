@@ -27,4 +27,10 @@
   <data name="Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="RestartHint" xml:space="preserve">
+    <value>Some settings require restarting MusicBee to take effect.</value>
+  </data>
+  <data name="ShowAddressBar" xml:space="preserve">
+    <value>Show address bar</value>
+  </data>
 </root>

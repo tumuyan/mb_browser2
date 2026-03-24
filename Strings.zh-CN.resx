@@ -27,4 +27,10 @@
   <data name="Cancel" xml:space="preserve">
     <value>取消</value>
   </data>
+  <data name="RestartHint" xml:space="preserve">
+    <value>部分选项需下次打开MusicBee才会生效。</value>
+  </data>
+  <data name="ShowAddressBar" xml:space="preserve">
+    <value>显示地址栏</value>
+  </data>
 </root>

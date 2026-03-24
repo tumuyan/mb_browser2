@@ -324,61 +324,63 @@ namespace MusicBeePlugin
 
             panel = new UserControl();
             panel.AutoScroll = false;
-            // 已删除：panel.MouseMove += Panel_MouseMove;
-            // 已删除：panel.MouseLeave += Panel_MouseLeave;
             Debug.WriteLine("Browser2: UserControl panel created");
 
-            if (string.IsNullOrEmpty(settings.DefaultUrl))
+            if (settings.ShowAddressBar)
             {
-                locationBarPrompt = new Control();
-                locationBarPrompt.BackColor = Color.White;
-                locationBarPrompt.ForeColor = Color.FromArgb(115, 115, 115);
-                locationBarPrompt.Font = new Font(font, FontStyle.Italic);
-                locationBarPrompt.TabStop = false;
-                locationBarPrompt.Cursor = Cursors.IBeam;
-                locationBarPrompt.Text = "Enter address or select a bookmark";
-                locationBarPrompt.Paint += LocationBarPrompt_Paint;
-                locationBarPrompt.MouseDown += LocationBarPrompt_MouseDown;
+                if (string.IsNullOrEmpty(settings.DefaultUrl))
+                {
+                    locationBarPrompt = new Control();
+                    locationBarPrompt.BackColor = Color.White;
+                    locationBarPrompt.ForeColor = Color.FromArgb(115, 115, 115);
+                    locationBarPrompt.Font = new Font(font, FontStyle.Italic);
+                    locationBarPrompt.TabStop = false;
+                    locationBarPrompt.Cursor = Cursors.IBeam;
+                    locationBarPrompt.Text = "Enter address or select a bookmark";
+                    locationBarPrompt.Paint += LocationBarPrompt_Paint;
+                    locationBarPrompt.MouseDown += LocationBarPrompt_MouseDown;
+                }
+
+                locationBar = new TextBox();
+                locationBar.BorderStyle = BorderStyle.FixedSingle;
+                locationBar.BackColor = themeBackgroundColor;
+                locationBar.ForeColor = themeForegroundColor;
+                locationBar.Font = font;
+                locationBar.TabStop = true;
+                locationBar.KeyDown += LocationBar_KeyDown;
+
+                header = new Control();
+                header.Height = 43;
+                header.Controls.Add(locationBarPrompt ?? new Control());
+                header.Controls.Add(locationBar);
+                header.Dock = DockStyle.Top;
+                header.Height = HEADER_FULL_HEIGHT;
+                header.TabStop = false;
+                header.Paint += Header_Paint;
+                header.Resize += Header_Resize;
+                header.MouseClick += Header_MouseClick;
             }
 
-            locationBar = new TextBox();
-            locationBar.BorderStyle = BorderStyle.FixedSingle;
-locationBar.BackColor = themeBackgroundColor;
-locationBar.ForeColor = themeForegroundColor;
-locationBar.Font = font;
-locationBar.TabStop = true;
-locationBar.KeyDown += LocationBar_KeyDown;
-
-            header = new Control();
-            header.Height = 43;
-            header.Controls.Add(locationBarPrompt ?? new Control());
-            header.Controls.Add(locationBar);
-header.Dock = DockStyle.Top;  // 使用 Top Dock，自动填充宽度
-header.Height = HEADER_FULL_HEIGHT;  // 固定高度 43 像素，始终显示
-header.TabStop = false;
-            header.Paint += Header_Paint;
-            header.Resize += Header_Resize;
-            header.MouseClick += Header_MouseClick;
-            // 不设置 BackColor，让 Paint 事件负责绘制背景
-            
-            // 创建 browser 控件
             browser = new WebView2();
             browser.Dock = DockStyle.Fill;
             browser.TabStop = false;
             browser.NavigationStarting += Browser_NavigationStarting;
             browser.NavigationCompleted += Browser_NavigationCompleted;
             browser.SourceChanged += Browser_SourceChanged;
-            
-            // 注册 VisibleChanged 事件，自动处理可见性变化
+
             panel.VisibleChanged += Panel_VisibleChanged;
-            // browser.VisibleChanged += Browser_VisibleChanged;
-            
-            // 先添加 browser（底层），再添加 header（上层）
+
             panel.Controls.Add(browser);
-            panel.Controls.Add(header);
+            if (settings.ShowAddressBar && header != null)
+            {
+                panel.Controls.Add(header);
+            }
             panel.TabStop = false;
 
-            ResizeHeader();
+            if (settings.ShowAddressBar)
+            {
+                ResizeHeader();
+            }
             Debug.WriteLine("Browser2: InitializeBrowser completed, initializing WebView2");
 
             InitializeWebView2AndAddPanel();
@@ -540,13 +542,13 @@ header.TabStop = false;
         private const int LEFT_MARGIN_BUTTONS = 1;  // 左侧保留 1 个按钮的间距
         private const int RIGHT_MARGIN_BUTTONS = 1; // 右侧保留 1 个按钮的间距
         
-        private Rectangle FavoritesHighlightBounds => new Rectangle(LEFT_MARGIN_BUTTONS * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
-        private Rectangle BrowseBackButtonBounds => new Rectangle((LEFT_MARGIN_BUTTONS + 0) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
-        private Rectangle BrowseForwardButtonBounds => new Rectangle((LEFT_MARGIN_BUTTONS + 1) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
-        private Rectangle HomeButtonBounds => new Rectangle((LEFT_MARGIN_BUTTONS + 2) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
-        private Rectangle RefreshStopButtonBounds => new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 0) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
-        private Rectangle BookmarkButtonBounds => new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 1) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
-        private Rectangle BookmarkListButtonBounds => new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 2) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT);
+        private Rectangle FavoritesHighlightBounds => header != null ? new Rectangle(LEFT_MARGIN_BUTTONS * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
+        private Rectangle BrowseBackButtonBounds => header != null ? new Rectangle((LEFT_MARGIN_BUTTONS + 0) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
+        private Rectangle BrowseForwardButtonBounds => header != null ? new Rectangle((LEFT_MARGIN_BUTTONS + 1) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
+        private Rectangle HomeButtonBounds => header != null ? new Rectangle((LEFT_MARGIN_BUTTONS + 2) * BUTTON_WIDTH, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
+        private Rectangle RefreshStopButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 0) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
+        private Rectangle BookmarkButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 1) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
+        private Rectangle BookmarkListButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 2) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
 
         private bool isMouseOverBack;
         private bool isMouseOverForward;
@@ -740,8 +742,7 @@ header.TabStop = false;
         private void Header_Resize(object sender, EventArgs e)
         {
             ResizeHeader();
-            // 重要：触发重绘，确保图标位置正确更新
-            header.Invalidate();
+            header?.Invalidate();
         }
 
         private void ResizeHeader()
@@ -799,7 +800,7 @@ header.TabStop = false;
             }
             else if (RefreshStopButtonBounds.Contains(e.Location))
             {
-                if (string.IsNullOrEmpty(locationBar.Text))
+                if (locationBar == null || string.IsNullOrEmpty(locationBar.Text))
                     return;
 
                 if (isLoading)
@@ -816,11 +817,11 @@ header.TabStop = false;
                     browser.Reload();
                     isLoading = true;
                 }
-                header.Invalidate(RefreshStopButtonBounds);
+                header?.Invalidate(RefreshStopButtonBounds);
             }
             else if (BookmarkButtonBounds.Contains(e.Location))
             {
-                if (!string.IsNullOrEmpty(locationBar.Text))
+                if (locationBar != null && !string.IsNullOrEmpty(locationBar.Text))
                 {
                     bool found = false;
                     for (int i = 0; i < settings.Bookmarks.Count; i++)
@@ -877,7 +878,7 @@ header.TabStop = false;
                 }
             }
 
-            var location = header.PointToScreen(new Point(header.Width - 50, header.Height));
+            var location = header?.PointToScreen(new Point(header.Width - 50, header.Height)) ?? Cursor.Position;
             bookmarkContextMenu.Show(location);
         }
 
@@ -886,7 +887,7 @@ header.TabStop = false;
             var bookmark = settings.Bookmarks[index];
             settings.Bookmarks.RemoveAt(index);
             SaveSettings();
-            SetLocationBarText(locationBar.Text);
+            SetLocationBarText(locationBar?.Text ?? "");
             mbApiInterface.MB_SetBackgroundTaskMessage("Bookmark '" + bookmark.Name + "' removed");
         }
 
@@ -913,16 +914,16 @@ header.TabStop = false;
         // private void LocationBar_LostFocus(object sender, EventArgs e) { ... }
         
         private void LocationBar_KeyDown(object sender, KeyEventArgs e)
-{
-    if (locationBarPrompt != null)
-    {
-        locationBarPrompt.Dispose();
-        locationBarPrompt = null;
-    }
+        {
+            if (locationBarPrompt != null)
+            {
+                locationBarPrompt.Dispose();
+                locationBarPrompt = null;
+            }
 
-    if (e.KeyCode == Keys.Return && locationBar.Text.Length > 0)
-    {
-        e.Handled = true;
+            if (e.KeyCode == Keys.Return && locationBar != null && locationBar.Text.Length > 0)
+            {
+                e.Handled = true;
                 e.SuppressKeyPress = true;
 
                 string url = locationBar.Text;
@@ -1009,7 +1010,7 @@ header.TabStop = false;
         {
             isLoading = true;
             ShowNavigationTarget(e.Uri);
-            header.Invalidate();
+            header?.Invalidate();
             Debug.WriteLine("Browser2: NavigationStarting - " + e.Uri);
         }
 
@@ -1017,7 +1018,7 @@ header.TabStop = false;
         {
             isLoading = false;
             activeUrl = browser.Source?.ToString();
-            header.Invalidate();
+            header?.Invalidate();
             Debug.WriteLine("Browser2: NavigationCompleted - " + (e.IsSuccess ? "Success" : "Failed: " + e.WebErrorStatus));
         }
 

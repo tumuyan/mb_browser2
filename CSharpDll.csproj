@@ -76,9 +76,12 @@
       <FilesToCopy Include="$(TargetDir)*.xml" />
       <FilesToCopy Include="$(TargetDir)Resources\*.png" />
       <ResourceFiles Include="$(ProjectDir)Resources\*.png" />
+      <SatelliteAssemblies Include="$(TargetDir)zh-CN\*.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="A:\Media\MusicBee\Plugins" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
     <MakeDir Directories="A:\Media\MusicBee\Plugins\Resources" Condition="!Exists('A:\Media\MusicBee\Plugins\Resources')" />
     <Copy SourceFiles="@(ResourceFiles)" DestinationFolder="A:\Media\MusicBee\Plugins\Resources" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
+    <MakeDir Directories="A:\Media\MusicBee\Plugins\zh-CN" Condition="!Exists('A:\Media\MusicBee\Plugins\zh-CN')" />
+    <Copy SourceFiles="@(SatelliteAssemblies)" DestinationFolder="A:\Media\MusicBee\Plugins\zh-CN" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
   </Target>
 </Project>
