@@ -33,4 +33,16 @@
   <data name="ShowAddressBar" xml:space="preserve">
     <value>显示地址栏</value>
   </data>
+  <data name="DarkModeLabel" xml:space="preserve">
+    <value>黑暗模式:</value>
+  </data>
+  <data name="DarkModeDefault" xml:space="preserve">
+    <value>默认</value>
+  </data>
+  <data name="DarkModeDark" xml:space="preserve">
+    <value>黑暗</value>
+  </data>
+  <data name="DarkModeMusicBeeTheme" xml:space="preserve">
+    <value>MusicBee主题</value>
+  </data>
 </root>

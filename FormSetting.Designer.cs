@@ -21,6 +21,8 @@ namespace MusicBeePlugin
             this.txtDefaultUrl = new System.Windows.Forms.TextBox();
             this.chkAutoSaveZoom = new System.Windows.Forms.CheckBox();
             this.chkShowAddressBar = new System.Windows.Forms.CheckBox();
+            this.lblDarkMode = new System.Windows.Forms.Label();
+            this.cmbDarkMode = new System.Windows.Forms.ComboBox();
             this.lblRestartHint = new System.Windows.Forms.Label();
             this.btnSave = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
@@ -61,11 +63,32 @@ namespace MusicBeePlugin
             this.chkShowAddressBar.Text = Strings.ShowAddressBar;
             this.chkShowAddressBar.UseVisualStyleBackColor = true;
             // 
+            // lblDarkMode
+            // 
+            this.lblDarkMode.AutoSize = true;
+            this.lblDarkMode.Location = new System.Drawing.Point(12, 100);
+            this.lblDarkMode.Name = "lblDarkMode";
+            this.lblDarkMode.Size = new System.Drawing.Size(60, 15);
+            this.lblDarkMode.Text = Strings.DarkModeLabel;
+            // 
+            // cmbDarkMode
+            // 
+            this.cmbDarkMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbDarkMode.FormattingEnabled = true;
+            this.cmbDarkMode.Items.AddRange(new object[] {
+                Strings.DarkModeDefault,
+                Strings.DarkModeDark,
+                Strings.DarkModeMusicBeeTheme});
+            this.cmbDarkMode.Location = new System.Drawing.Point(88, 97);
+            this.cmbDarkMode.Name = "cmbDarkMode";
+            this.cmbDarkMode.Size = new System.Drawing.Size(120, 23);
+            this.cmbDarkMode.TabIndex = 4;
+            // 
             // lblRestartHint
             // 
             this.lblRestartHint.AutoSize = true;
             this.lblRestartHint.ForeColor = System.Drawing.Color.Gray;
-            this.lblRestartHint.Location = new System.Drawing.Point(12, 95);
+            this.lblRestartHint.Location = new System.Drawing.Point(12, 128);
             this.lblRestartHint.Name = "lblRestartHint";
             this.lblRestartHint.Size = new System.Drawing.Size(200, 15);
             this.lblRestartHint.Text = Strings.RestartHint;
@@ -73,7 +96,7 @@ namespace MusicBeePlugin
             // btnSave
             // 
             this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSave.Location = new System.Drawing.Point(313, 115);
+            this.btnSave.Location = new System.Drawing.Point(313, 148);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(75, 25);
             this.btnSave.TabIndex = 2;
@@ -83,7 +106,7 @@ namespace MusicBeePlugin
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnCancel.Location = new System.Drawing.Point(394, 115);
+            this.btnCancel.Location = new System.Drawing.Point(394, 148);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 25);
             this.btnCancel.TabIndex = 3;
@@ -96,7 +119,9 @@ namespace MusicBeePlugin
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(480, 152);
+            this.ClientSize = new System.Drawing.Size(480, 185);
+            this.Controls.Add(this.cmbDarkMode);
+            this.Controls.Add(this.lblDarkMode);
             this.Controls.Add(this.lblRestartHint);
             this.Controls.Add(this.chkShowAddressBar);
             this.Controls.Add(this.btnCancel);
@@ -122,6 +147,8 @@ namespace MusicBeePlugin
         private System.Windows.Forms.TextBox txtDefaultUrl;
         private System.Windows.Forms.CheckBox chkAutoSaveZoom;
         private System.Windows.Forms.CheckBox chkShowAddressBar;
+        private System.Windows.Forms.Label lblDarkMode;
+        private System.Windows.Forms.ComboBox cmbDarkMode;
         private System.Windows.Forms.Label lblRestartHint;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;

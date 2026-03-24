@@ -86,5 +86,29 @@ namespace MusicBeePlugin {
                 return ResourceManager.GetString("ShowAddressBar", resourceCulture);
             }
         }
+        
+        internal static string DarkModeLabel {
+            get {
+                return ResourceManager.GetString("DarkModeLabel", resourceCulture);
+            }
+        }
+        
+        internal static string DarkModeDefault {
+            get {
+                return ResourceManager.GetString("DarkModeDefault", resourceCulture);
+            }
+        }
+        
+        internal static string DarkModeDark {
+            get {
+                return ResourceManager.GetString("DarkModeDark", resourceCulture);
+            }
+        }
+        
+        internal static string DarkModeMusicBeeTheme {
+            get {
+                return ResourceManager.GetString("DarkModeMusicBeeTheme", resourceCulture);
+            }
+        }
     }
 }

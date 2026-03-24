@@ -33,4 +33,16 @@
   <data name="ShowAddressBar" xml:space="preserve">
     <value>Show address bar</value>
   </data>
+  <data name="DarkModeLabel" xml:space="preserve">
+    <value>Dark mode:</value>
+  </data>
+  <data name="DarkModeDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="DarkModeDark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="DarkModeMusicBeeTheme" xml:space="preserve">
+    <value>MusicBee Theme</value>
+  </data>
 </root>

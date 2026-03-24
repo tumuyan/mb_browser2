@@ -450,6 +450,21 @@ namespace MusicBeePlugin
                 if (webViewEnvironment == null)
                 {
                     var envSettings = new CoreWebView2EnvironmentOptions();
+                    bool enableDarkMode = false;
+                    
+                    if (settings.DarkMode == DarkModeType.Dark)
+                    {
+                        enableDarkMode = true;
+                    }
+                    else if (settings.DarkMode == DarkModeType.MusicBeeTheme)
+                    {
+                        enableDarkMode = IsColorDark(themeBackgroundColor);
+                    }
+                    
+                    if (enableDarkMode)
+                    {
+                        envSettings.AdditionalBrowserArguments = "--enable-features=ForceDarkModeFlag,MediaQueryEmulation --force-dark-mode --emulate-media-features=prefers-color-scheme:dark";
+                    }
                     webViewEnvironment = await CoreWebView2Environment.CreateAsync(null, null, envSettings);
                     System.Diagnostics.Trace.WriteLine("WebView2 Environment created");
                 }
@@ -473,6 +488,12 @@ namespace MusicBeePlugin
                 Debug.WriteLine("Browser2: WebView2 init error: " + ex.Message);
                 MessageBox.Show("WebView2 init error: " + ex.Message, "Browser2 Error");
             }
+        }
+
+        private bool IsColorDark(Color color)
+        {
+            double luminance = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255;
+            return luminance < 0.5;
         }
 
         private void AddPanelToMusicBee()

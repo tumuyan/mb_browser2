@@ -9,6 +9,7 @@ namespace MusicBeePlugin
         private string originalDefaultUrl;
         private bool originalAutoSaveZoom;
         private bool originalShowAddressBar;
+        private DarkModeType originalDarkMode;
         public bool SettingsChanged { get; private set; }
 
         public FormSetting(BrowserSettings settings)
@@ -18,11 +19,13 @@ namespace MusicBeePlugin
             this.originalDefaultUrl = settings.DefaultUrl;
             this.originalAutoSaveZoom = settings.AutoSaveZoom;
             this.originalShowAddressBar = settings.ShowAddressBar;
+            this.originalDarkMode = settings.DarkMode;
             this.SettingsChanged = false;
 
             txtDefaultUrl.Text = settings.DefaultUrl ?? "";
             chkAutoSaveZoom.Checked = settings.AutoSaveZoom;
             chkShowAddressBar.Checked = settings.ShowAddressBar;
+            cmbDarkMode.SelectedIndex = (int)settings.DarkMode;
 
             btnSave.Click += BtnSave_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -33,10 +36,12 @@ namespace MusicBeePlugin
             settings.DefaultUrl = txtDefaultUrl.Text.Trim();
             settings.AutoSaveZoom = chkAutoSaveZoom.Checked;
             settings.ShowAddressBar = chkShowAddressBar.Checked;
+            settings.DarkMode = (DarkModeType)cmbDarkMode.SelectedIndex;
 
             if (settings.DefaultUrl != originalDefaultUrl || 
                 settings.AutoSaveZoom != originalAutoSaveZoom ||
-                settings.ShowAddressBar != originalShowAddressBar)
+                settings.ShowAddressBar != originalShowAddressBar ||
+                settings.DarkMode != originalDarkMode)
             {
                 SettingsChanged = true;
             }

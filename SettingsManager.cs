@@ -19,14 +19,22 @@ namespace MusicBeePlugin
         }
     }
 
+    public enum DarkModeType
+    {
+        Default = 0,
+        Dark = 1,
+        MusicBeeTheme = 2
+    }
+
     public class BrowserSettings
     {
-        public int Version { get; set; } = 5;
+        public int Version { get; set; } = 7;
         public string DefaultUrl { get; set; }
         public List<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
         public double ZoomFactor { get; set; } = 1.0;
         public bool AutoSaveZoom { get; set; } = true;
         public bool ShowAddressBar { get; set; } = true;
+        public DarkModeType DarkMode { get; set; } = DarkModeType.Default;
     }
 
     public static class SettingsManager
