@@ -14,13 +14,21 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3908-prerelease" />
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
-    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.6" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FormSetting.cs" />
+    <Compile Include="FormSetting.Designer.cs" />
     <Compile Include="MusicBeeInterface.cs" />
     <Compile Include="Browser2.cs" />
     <Compile Include="SettingsManager.cs" />
+    <Compile Include="Strings.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="FormSetting.resx" />
+    <EmbeddedResource Include="Strings.resx" />
+    <EmbeddedResource Include="Strings.zh-CN.resx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\iconmonstr-arrow-left-alt-filled-16.png">

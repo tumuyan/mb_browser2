@@ -66,38 +66,32 @@ namespace MusicBeePlugin
             closeHandler = CloseBrowser;
             about.PluginInfoVersion = PluginInfoVersion;
             about.Name = "Browser2";
-            about.Description = "A modern web browser based on WebView2";
             about.Author = "tumuyan";
             about.TargetApplication = "";
             about.Type = PluginType.WebBrowser;
             about.VersionMajor = 1;
             about.VersionMinor = 0;
             about.Revision = 2;
+            about.Description = $"A modern web browser based on WebView2. (v{about.VersionMajor}.{about.VersionMinor}.{about.Revision})";
             about.MinInterfaceVersion = MinInterfaceVersion;
             about.MinApiRevision = MinApiRevision;
             about.ReceiveNotifications = (ReceiveNotificationFlags.PlayerEvents | ReceiveNotificationFlags.TagEvents);
-            about.ConfigurationPanelHeight = 40;   // height in pixels that musicbee should reserve in a panel for config settings. When set, a handle to an empty panel will be passed to the Configure function
+            about.ConfigurationPanelHeight = 0;   // height in pixels that musicbee should reserve in a panel for config settings. When set, a handle to an empty panel will be passed to the Configure function
             Debug.WriteLine("Browser2: Initialise completed");
             return about;
         }
 
         public bool Configure(IntPtr panelHandle)
         {
-            if (panelHandle != IntPtr.Zero)
+            using (var form = new FormSetting(settings))
             {
-                Panel configPanel = (Panel)Panel.FromHandle(panelHandle);
-                Label prompt = new Label();
-                prompt.AutoSize = true;
-                prompt.Location = new Point(0, 6);
-                prompt.Text = "Home Page";
-                TextBox textBox = new TextBox();
-                textBox.Bounds = new Rectangle(prompt.Width+50, 0, 400, textBox.Height);
-                textBox.Text =  settings.DefaultUrl ?? "";
-                textBox.TextChanged += (s, e) => { settings.DefaultUrl = textBox.Text; isSettingsDirty = true; };
-                configPanel.Controls.AddRange(new Control[] { prompt, textBox });
+                if (form.ShowDialog() == DialogResult.OK && form.SettingsChanged)
+                {
+                    isSettingsDirty = true;
+                    SaveSettings();
+                }
             }
-            return false;
-
+            return true;
         }
 
         public void SaveSettings()
@@ -463,7 +457,7 @@ header.TabStop = false;
                 browser.CoreWebView2.NewWindowRequested += CoreWebView2_NewWindowRequested;
                 browser.ZoomFactorChanged += Browser_ZoomFactorChanged;
                 
-                if (settings.ZoomFactor > 0 && settings.ZoomFactor != 1.0)
+                if (settings.ZoomFactor > 0 && settings.AutoSaveZoom)
                 {
                     browser.ZoomFactor = settings.ZoomFactor;
                 }
@@ -1029,7 +1023,7 @@ header.TabStop = false;
 
         private void Browser_ZoomFactorChanged(object sender, EventArgs e)
         {
-            if (browser != null)
+            if (browser != null && settings.AutoSaveZoom)
             {
                 settings.ZoomFactor = browser.ZoomFactor;
                 isSettingsDirty = true;
