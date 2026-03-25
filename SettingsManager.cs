@@ -28,13 +28,14 @@ namespace MusicBeePlugin
 
     public class BrowserSettings
     {
-        public int Version { get; set; } = 7;
+        public int Version { get; set; } = 8;
         public string DefaultUrl { get; set; }
         public List<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
         public double ZoomFactor { get; set; } = 1.0;
         public bool AutoSaveZoom { get; set; } = true;
         public bool ShowAddressBar { get; set; } = true;
         public DarkModeType DarkMode { get; set; } = DarkModeType.Default;
+        public bool EnableExtensions { get; set; } = false;
     }
 
     public static class SettingsManager

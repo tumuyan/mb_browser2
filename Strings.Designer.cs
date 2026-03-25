@@ -110,5 +110,174 @@ namespace MusicBeePlugin {
                 return ResourceManager.GetString("DarkModeMusicBeeTheme", resourceCulture);
             }
         }
+        
+        internal static string EnableExtensions {
+            get {
+                return ResourceManager.GetString("EnableExtensions", resourceCulture);
+            }
+        }
+        
+        internal static string OpenExtensionsFolder {
+            get {
+                return ResourceManager.GetString("OpenExtensionsFolder", resourceCulture);
+            }
+        }
+        
+        internal static string InstallUnpackedExtension {
+            get {
+                return ResourceManager.GetString("InstallUnpackedExtension", resourceCulture);
+            }
+        }
+        
+        internal static string InstallZipCrxExtension {
+            get {
+                return ResourceManager.GetString("InstallZipCrxExtension", resourceCulture);
+            }
+        }
+        
+        internal static string SelectExtensionFolder {
+            get {
+                return ResourceManager.GetString("SelectExtensionFolder", resourceCulture);
+            }
+        }
+        
+        internal static string SelectExtensionFile {
+            get {
+                return ResourceManager.GetString("SelectExtensionFile", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionInstalled {
+            get {
+                return ResourceManager.GetString("ExtensionInstalled", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionInstallFailed {
+            get {
+                return ResourceManager.GetString("ExtensionInstallFailed", resourceCulture);
+            }
+        }
+        
+        internal static string InstalledExtensions {
+            get {
+                return ResourceManager.GetString("InstalledExtensions", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionName {
+            get {
+                return ResourceManager.GetString("ExtensionName", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionVersion {
+            get {
+                return ResourceManager.GetString("ExtensionVersion", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionEnabled {
+            get {
+                return ResourceManager.GetString("ExtensionEnabled", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionAction {
+            get {
+                return ResourceManager.GetString("ExtensionAction", resourceCulture);
+            }
+        }
+        
+        internal static string Uninstall {
+            get {
+                return ResourceManager.GetString("Uninstall", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionUninstalled {
+            get {
+                return ResourceManager.GetString("ExtensionUninstalled", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionUninstallFailed {
+            get {
+                return ResourceManager.GetString("ExtensionUninstallFailed", resourceCulture);
+            }
+        }
+        
+        internal static string NoExtensionsInstalled {
+            get {
+                return ResourceManager.GetString("NoExtensionsInstalled", resourceCulture);
+            }
+        }
+        
+        internal static string ConfirmUninstall {
+            get {
+                return ResourceManager.GetString("ConfirmUninstall", resourceCulture);
+            }
+        }
+        
+        
+        internal static string Yes {
+            get {
+                return ResourceManager.GetString("Yes", resourceCulture);
+            }
+        }
+        
+        internal static string No {
+            get {
+                return ResourceManager.GetString("No", resourceCulture);
+            }
+        }
+        
+        internal static string Unknown {
+            get {
+                return ResourceManager.GetString("Unknown", resourceCulture);
+            }
+        }
+        
+        internal static string EnableExtension {
+            get {
+                return ResourceManager.GetString("EnableExtension", resourceCulture);
+            }
+        }
+        
+        internal static string DisableExtension {
+            get {
+                return ResourceManager.GetString("DisableExtension", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionEnabledMessage {
+            get {
+                return ResourceManager.GetString("ExtensionEnabled", resourceCulture);
+            }
+        }
+        
+        internal static string ExtensionDisabled {
+            get {
+                return ResourceManager.GetString("ExtensionDisabled", resourceCulture);
+            }
+        }
+        
+        internal static string ToggleExtensionFailed {
+            get {
+                return ResourceManager.GetString("ToggleExtensionFailed", resourceCulture);
+            }
+        }
+        
+        internal static string ManifestNotFound {
+            get {
+                return ResourceManager.GetString("ManifestNotFound", resourceCulture);
+            }
+        }
+        
+        internal static string RestartRequiredForExtensionChanges {
+            get {
+                return ResourceManager.GetString("RestartRequiredForExtensionChanges", resourceCulture);
+            }
+        }
     }
 }

@@ -45,4 +45,97 @@
   <data name="DarkModeMusicBeeTheme" xml:space="preserve">
     <value>MusicBee Theme</value>
   </data>
+  <data name="EnableExtensions" xml:space="preserve">
+    <value>Enable Microsoft Edge extensions</value>
+  </data>
+  <data name="OpenExtensionsFolder" xml:space="preserve">
+    <value>Open Extensions Folder</value>
+  </data>
+  <data name="InstallUnpackedExtension" xml:space="preserve">
+    <value>Install Unpacked Extension</value>
+  </data>
+  <data name="InstallZipCrxExtension" xml:space="preserve">
+    <value>Install ZIP/CRX Extension</value>
+  </data>
+  <data name="SelectExtensionFolder" xml:space="preserve">
+    <value>Select Extension Folder</value>
+  </data>
+  <data name="SelectExtensionFile" xml:space="preserve">
+    <value>Select Extension File</value>
+  </data>
+  <data name="ExtensionInstalled" xml:space="preserve">
+    <value>Extension installed successfully.</value>
+  </data>
+  <data name="ExtensionInstallFailed" xml:space="preserve">
+    <value>Failed to install extension:</value>
+  </data>
+  <data name="InstalledExtensions" xml:space="preserve">
+    <value>Installed Extensions:</value>
+  </data>
+  <data name="ExtensionName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ExtensionVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="ExtensionEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="ExtensionAction" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="ExtensionUninstalled" xml:space="preserve">
+    <value>Extension uninstalled successfully.</value>
+  </data>
+  <data name="ExtensionUninstallFailed" xml:space="preserve">
+    <value>Failed to uninstall extension:</value>
+  </data>
+  <data name="NoExtensionsInstalled" xml:space="preserve">
+    <value>No extensions installed.</value>
+  </data>
+  <data name="ConfirmUninstall" xml:space="preserve">
+    <value>Are you sure you want to uninstall this extension?</value>
+  </data>
+  <data name="ExtensionName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ExtensionVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="ExtensionEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="EnableExtension" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="DisableExtension" xml:space="preserve">
+    <value>Disable</value>
+  </data>
+  <data name="ExtensionEnabled" xml:space="preserve">
+    <value>Extension enabled.</value>
+  </data>
+  <data name="ExtensionDisabled" xml:space="preserve">
+    <value>Extension disabled.</value>
+  </data>
+  <data name="ToggleExtensionFailed" xml:space="preserve">
+    <value>Failed to toggle extension:</value>
+  </data>
+  <data name="ManifestNotFound" xml:space="preserve">
+    <value>Manifest file not found.</value>
+  </data>
+  <data name="RestartRequiredForExtensionChanges" xml:space="preserve">
+    <value>Extension changes require restarting WebView2 to take effect. Please close and reopen the browser.</value>
+  </data>
 </root>

@@ -45,4 +45,97 @@
   <data name="DarkModeMusicBeeTheme" xml:space="preserve">
     <value>MusicBee主题</value>
   </data>
+  <data name="EnableExtensions" xml:space="preserve">
+    <value>启用 Microsoft Edge 扩展</value>
+  </data>
+  <data name="OpenExtensionsFolder" xml:space="preserve">
+    <value>打开扩展目录</value>
+  </data>
+  <data name="InstallUnpackedExtension" xml:space="preserve">
+    <value>安装已解压的扩展</value>
+  </data>
+  <data name="InstallZipCrxExtension" xml:space="preserve">
+    <value>安装ZIP/CRX扩展</value>
+  </data>
+  <data name="SelectExtensionFolder" xml:space="preserve">
+    <value>选择扩展目录</value>
+  </data>
+  <data name="SelectExtensionFile" xml:space="preserve">
+    <value>选择扩展文件</value>
+  </data>
+  <data name="ExtensionInstalled" xml:space="preserve">
+    <value>扩展安装成功。</value>
+  </data>
+  <data name="ExtensionInstallFailed" xml:space="preserve">
+    <value>扩展安装失败：</value>
+  </data>
+  <data name="InstalledExtensions" xml:space="preserve">
+    <value>已安装的扩展:</value>
+  </data>
+  <data name="ExtensionName" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="ExtensionVersion" xml:space="preserve">
+    <value>版本</value>
+  </data>
+  <data name="ExtensionEnabled" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="ExtensionAction" xml:space="preserve">
+    <value>操作</value>
+  </data>
+  <data name="Uninstall" xml:space="preserve">
+    <value>卸载</value>
+  </data>
+  <data name="ExtensionUninstalled" xml:space="preserve">
+    <value>扩展卸载成功。</value>
+  </data>
+  <data name="ExtensionUninstallFailed" xml:space="preserve">
+    <value>扩展卸载失败：</value>
+  </data>
+  <data name="NoExtensionsInstalled" xml:space="preserve">
+    <value>没有已安装的扩展。</value>
+  </data>
+  <data name="ConfirmUninstall" xml:space="preserve">
+    <value>确定要卸载此扩展吗？</value>
+  </data>
+  <data name="ExtensionName" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="ExtensionVersion" xml:space="preserve">
+    <value>版本</value>
+  </data>
+  <data name="ExtensionEnabled" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>是</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>否</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="EnableExtension" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="DisableExtension" xml:space="preserve">
+    <value>禁用</value>
+  </data>
+  <data name="ExtensionEnabled" xml:space="preserve">
+    <value>扩展已启用。</value>
+  </data>
+  <data name="ExtensionDisabled" xml:space="preserve">
+    <value>扩展已禁用。</value>
+  </data>
+  <data name="ToggleExtensionFailed" xml:space="preserve">
+    <value>切换扩展状态失败：</value>
+  </data>
+  <data name="ManifestNotFound" xml:space="preserve">
+    <value>找不到 manifest.json 文件。</value>
+  </data>
+  <data name="RestartRequiredForExtensionChanges" xml:space="preserve">
+    <value>扩展更改需要重启 WebView2 才能生效。请关闭并重新打开浏览器。</value>
+  </data>
 </root>

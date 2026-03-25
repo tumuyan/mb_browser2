@@ -15,6 +15,45 @@ using System.Windows.Forms;
 
 namespace MusicBeePlugin
 {
+    internal static class Log
+    {
+        public const bool EnableGeneralLog = false;
+        public const bool EnableNavigationLog = false;
+        public const bool EnableExtensionLog = true;
+        public const bool EnableResizeLog = false;
+        public const bool EnableSkinDebugLog = false;
+
+        [Conditional("DEBUG")]
+        public static void General(string message)
+        {
+            if (EnableGeneralLog) Debug.WriteLine(message);
+        }
+
+        [Conditional("DEBUG")]
+        public static void Navigation(string message)
+        {
+            if (EnableNavigationLog) Debug.WriteLine(message);
+        }
+
+        [Conditional("DEBUG")]
+        public static void Extension(string message)
+        {
+            if (EnableExtensionLog) Debug.WriteLine(message);
+        }
+
+        [Conditional("DEBUG")]
+        public static void Resize(string message)
+        {
+            if (EnableResizeLog) Debug.WriteLine(message);
+        }
+
+        [Conditional("DEBUG")]
+        public static void SkinDebug(string message)
+        {
+            if (EnableSkinDebugLog) Debug.WriteLine(message);
+        }
+    }
+
     public partial class Plugin
     {
         private MusicBeeApiInterface mbApiInterface;
@@ -77,13 +116,19 @@ namespace MusicBeePlugin
             about.MinApiRevision = MinApiRevision;
             about.ReceiveNotifications = (ReceiveNotificationFlags.PlayerEvents | ReceiveNotificationFlags.TagEvents);
             about.ConfigurationPanelHeight = 0;   // height in pixels that musicbee should reserve in a panel for config settings. When set, a handle to an empty panel will be passed to the Configure function
-            Debug.WriteLine("Browser2: Initialise completed");
+            Log.General("Browser2: Initialise completed");
             return about;
         }
 
         public bool Configure(IntPtr panelHandle)
         {
-            using (var form = new FormSetting(settings))
+            string storagePath = mbApiInterface.Setting_GetPersistentStoragePath();
+            Microsoft.Web.WebView2.Core.CoreWebView2Profile profile = null;
+            if (browser != null && browser.CoreWebView2 != null)
+            {
+                profile = browser.CoreWebView2.Profile;
+            }
+            using (var form = new FormSetting(settings, storagePath, profile))
             {
                 if (form.ShowDialog() == DialogResult.OK && form.SettingsChanged)
                 {
@@ -103,7 +148,7 @@ namespace MusicBeePlugin
 
         private string LoadSettings()
         {
-            Debug.WriteLine("加载设置");
+            Log.General("加载设置");
             string jsonPath = mbApiInterface.Setting_GetPersistentStoragePath() + "Browser2Settings.json";
             settings = SettingsManager.Load<BrowserSettings>(jsonPath);
             return settings.DefaultUrl;
@@ -193,8 +238,8 @@ namespace MusicBeePlugin
             switch (type)
             {
                 case NotificationType.PluginStartup:
-                    Debug.WriteLine("Browser2: PluginStartup");
-                    Debug.WriteLine("Browser2: API Revision = " + mbApiInterface.ApiRevision);
+                    Log.General("Browser2: PluginStartup");
+                    Log.General("Browser2: API Revision = " + mbApiInterface.ApiRevision);
                     //MessageBox.Show("Browser2: PluginStartup! API=" + mbApiInterface.ApiRevision, "Browser2");
                     
                     // Debug: 遍历所有 SkinElement 的配色
@@ -202,7 +247,7 @@ namespace MusicBeePlugin
                     
                     try
                     {
-                        Debug.WriteLine("Browser2: Adding tree node");
+                        Log.General("Browser2: Adding tree node");
                         themeForegroundColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentForeground);
                         themeBackgroundColor = GetThemeColor(SkinElement.SkinSubPanel, ElementComponent.ComponentBackground);
 
@@ -223,7 +268,7 @@ namespace MusicBeePlugin
                         }
                         else
                         {
-                            Debug.WriteLine("Browser2: Failed to create themed icon");
+                            Log.General("Browser2: Failed to create themed icon");
                             mbApiInterface.MB_AddTreeNode("Services", "Browser2", null, openHandler, closeHandler);
                         }
 
@@ -232,7 +277,7 @@ namespace MusicBeePlugin
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine("Browser2: MenuItem exception: " + ex.Message + ex.StackTrace);
+                        Log.General("Browser2: MenuItem exception: " + ex.Message + ex.StackTrace);
                         MessageBox.Show("Browser2: MenuItem error: " + ex.Message, "Browser2 Error");
                     }
                     break;
@@ -249,11 +294,11 @@ namespace MusicBeePlugin
 
         public void OpenBrowser(object sender, EventArgs e)
         {
-            Debug.WriteLine("Browser2: OpenBrowser called, loadOnceUrl: "+loadOnceUrl);
+            Log.Navigation("Browser2: OpenBrowser called, loadOnceUrl: "+loadOnceUrl);
             
             // 记录状态：浏览器应该可见
             shouldBrowserBeVisible = true;
-            Debug.WriteLine($"Browser2: Set shouldBrowserBeVisible = true");
+            Log.Navigation("Browser2: Set shouldBrowserBeVisible = true");
             
             string text = loadOnceUrl;
             loadOnceUrl = null;
@@ -263,23 +308,23 @@ namespace MusicBeePlugin
                 {
                     text = LoadSettings();
                 }
-                Debug.WriteLine("Browser2: LoadSettings returned: " + (text ?? "null"));
-                Debug.WriteLine("Browser2: Before InitializeBrowser, pendingUrl=" + (pendingUrl ?? "null"));
+                Log.Navigation("Browser2: LoadSettings returned: " + (text ?? "null"));
+                Log.Navigation("Browser2: Before InitializeBrowser, pendingUrl=" + (pendingUrl ?? "null"));
                 browser = null;
                 panel = null;
                 InitializeBrowser();
-                Debug.WriteLine("Browser2: After InitializeBrowser, pendingUrl=" + (pendingUrl ?? "null"));
+                Log.Navigation("Browser2: After InitializeBrowser, pendingUrl=" + (pendingUrl ?? "null"));
             }
             else
             {
                 // WebView2 存在但 panel 已被移除，重新添加面板
-                Debug.WriteLine("Browser2: WebView2 exists, reusing, text=" + (text ?? "null"));
+                Log.Navigation("Browser2: WebView2 exists, reusing, text=" + (text ?? "null"));
                 
                 // 设置 WebView2 可见，恢复渲染
                 if (browser != null)
                 {
                     browser.Visible = true;
-                    Debug.WriteLine("Browser2: Set WebView2 Visible = true");
+                    Log.Navigation("Browser2: Set WebView2 Visible = true");
                 }
                 
                 AddPanelToMusicBee();
@@ -287,17 +332,17 @@ namespace MusicBeePlugin
                 // 如果有指定 URL，则加载指定 URL；否则不加载（因为可能已经在 Navigate 中加载过了）
                 if (!string.IsNullOrEmpty(text))
                 {
-                    Debug.WriteLine("Browser2: Loading specified URL: " + text);
+                    Log.Navigation("Browser2: Loading specified URL: " + text);
                     pendingUrl = text;
                     TryNavigate();
                 }
                 else
                 {
-                    Debug.WriteLine("Browser2: No URL specified, skipping navigation (may have been loaded in Navigate method)");
+                    Log.Navigation("Browser2: No URL specified, skipping navigation (may have been loaded in Navigate method)");
                     // 切换回来时，更新地址栏显示当前的 URL
                     if (!string.IsNullOrEmpty(activeUrl) && locationBar != null)
                     {
-                        Debug.WriteLine("Browser2: Restoring location bar text to: " + activeUrl);
+                        Log.Navigation("Browser2: Restoring location bar text to: " + activeUrl);
                         locationBar.Text = activeUrl;
                     }
                 }
@@ -450,6 +495,8 @@ namespace MusicBeePlugin
                 if (webViewEnvironment == null)
                 {
                     var envSettings = new CoreWebView2EnvironmentOptions();
+                    var browserArgs = new System.Collections.Generic.List<string>();
+                    
                     bool enableDarkMode = false;
                     
                     if (settings.DarkMode == DarkModeType.Dark)
@@ -463,8 +510,33 @@ namespace MusicBeePlugin
                     
                     if (enableDarkMode)
                     {
-                        envSettings.AdditionalBrowserArguments = "--enable-features=ForceDarkModeFlag,MediaQueryEmulation --force-dark-mode --emulate-media-features=prefers-color-scheme:dark";
+                        browserArgs.Add("--enable-features=ForceDarkModeFlag,MediaQueryEmulation");
+                        browserArgs.Add("--force-dark-mode");
+                        browserArgs.Add("--emulate-media-features=prefers-color-scheme:dark");
+                        Debug.WriteLine("Browser2: Dark mode enabled");
                     }
+                    
+                    if (settings.EnableExtensions)
+                    {
+                        Debug.WriteLine("Browser2: Extensions enabled in settings");
+                        try
+                        {
+                            envSettings.AreBrowserExtensionsEnabled = true;
+                            Debug.WriteLine("Browser2: AreBrowserExtensionsEnabled set to true");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine("Browser2: AreBrowserExtensionsEnabled not supported: " + ex.Message);
+                            browserArgs.Add("--embedded-browser-webview-enable-extension");
+                        }
+                    }
+                    
+                    if (browserArgs.Count > 0)
+                    {
+                        envSettings.AdditionalBrowserArguments = string.Join(" ", browserArgs);
+                        Debug.WriteLine("Browser2: AdditionalBrowserArguments: " + envSettings.AdditionalBrowserArguments);
+                    }
+                    
                     webViewEnvironment = await CoreWebView2Environment.CreateAsync(null, null, envSettings);
                     System.Diagnostics.Trace.WriteLine("WebView2 Environment created");
                 }
@@ -479,6 +551,11 @@ namespace MusicBeePlugin
                     browser.ZoomFactor = settings.ZoomFactor;
                 }
                 
+                if (settings.EnableExtensions)
+                {
+                    await LoadExtensionsAsync();
+                }
+                
                 Debug.WriteLine("Browser2: WebView2 initialized");
                 AddPanelToMusicBee();
             }
@@ -487,6 +564,39 @@ namespace MusicBeePlugin
                 System.Diagnostics.Trace.WriteLine("WebView2 init error: " + ex);
                 Debug.WriteLine("Browser2: WebView2 init error: " + ex.Message);
                 MessageBox.Show("WebView2 init error: " + ex.Message, "Browser2 Error");
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadExtensionsAsync()
+        {
+            string storagePath = mbApiInterface.Setting_GetPersistentStoragePath();
+            string extensionsPath = System.IO.Path.Combine(storagePath, "Browser2Extensions");
+            
+            Debug.WriteLine("Browser2: LoadExtensionsAsync started");
+            Debug.WriteLine("Browser2: Storage path: " + storagePath);
+            Debug.WriteLine("Browser2: Extensions path: " + extensionsPath);
+            
+            if (!System.IO.Directory.Exists(extensionsPath))
+            {
+                Debug.WriteLine("Browser2: Extensions directory does not exist");
+                return;
+            }
+
+            try
+            {
+                var profile = browser.CoreWebView2.Profile;
+                Debug.WriteLine("Browser2: Profile: " + (profile != null ? "available" : "null"));
+                
+                if (profile != null)
+                {
+                    await ExtensionManager.LoadExtensionsAsync(profile);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Browser2: LoadExtensions error: " + ex.Message);
+                Debug.WriteLine("Browser2: Exception type: " + ex.GetType().FullName);
+                Debug.WriteLine("Browser2: Stack trace: " + ex.StackTrace);
             }
         }
 

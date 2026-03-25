@@ -17,10 +17,15 @@
     <PackageReference Include="System.Text.Json" Version="8.0.6" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="FormSetting.cs" />
     <Compile Include="FormSetting.Designer.cs" />
     <Compile Include="MusicBeeInterface.cs" />
     <Compile Include="Browser2.cs" />
+    <Compile Include="ExtensionManager.cs" />
     <Compile Include="SettingsManager.cs" />
     <Compile Include="Strings.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
