@@ -443,12 +443,12 @@ namespace MusicBeePlugin
         private void MainForm_Resize(object sender, EventArgs e)
         {
             Form form = (Form)sender;
-            Debug.WriteLine($"===== Form.Resize =====");
-            Debug.WriteLine($"  WindowState = {form.WindowState}");
-            Debug.WriteLine($"  shouldBrowserBeVisible = {shouldBrowserBeVisible}");
-            Debug.WriteLine($"  panel.Visible = {panel?.Visible}");
-            Debug.WriteLine($"  browser.Visible = {browser?.Visible}");
-            Debug.WriteLine("========================");
+            Log.Resize($"===== Form.Resize =====");
+            Log.Resize($"  WindowState = {form.WindowState}");
+            Log.Resize($"  shouldBrowserBeVisible = {shouldBrowserBeVisible}");
+            Log.Resize($"  panel.Visible = {panel?.Visible}");
+            Log.Resize($"  browser.Visible = {browser?.Visible}");
+            Log.Resize("========================");
             
             if (browser == null) return;
             
@@ -458,25 +458,25 @@ namespace MusicBeePlugin
                 if (browser.Visible)
                 {
                     browser.Visible = false;
-                    Debug.WriteLine("Browser2: MusicBee minimized, set browser.Visible = false");
+                    Log.Resize("Browser2: MusicBee minimized, set browser.Visible = false");
                 }
             }
             else if (form.WindowState == FormWindowState.Normal || form.WindowState == FormWindowState.Maximized)
             {
-                Debug.WriteLine("Browser2: MusicBee restored");
+                Log.Resize("Browser2: MusicBee restored");
                 // 只有在 shouldBrowserBeVisible = true 时才恢复 browser.Visible
                 if (shouldBrowserBeVisible && !browser.Visible)
                 {
                     browser.Visible = true;
-                    Debug.WriteLine("Browser2: shouldBrowserBeVisible = true, set browser.Visible = true");
+                    Log.Resize("Browser2: shouldBrowserBeVisible = true, set browser.Visible = true");
                 }
                 else if (!shouldBrowserBeVisible)
                 {
-                    Debug.WriteLine("Browser2: shouldBrowserBeVisible = false, keep browser.Visible = false");
+                    Log.Resize("Browser2: shouldBrowserBeVisible = false, keep browser.Visible = false");
                 }
                 else
                 {
-                    Debug.WriteLine("Browser2: browser.Visible already true, no change needed");
+                    Log.Resize("Browser2: browser.Visible already true, no change needed");
                 }
             }
         }
@@ -505,7 +505,8 @@ namespace MusicBeePlugin
                     }
                     else if (settings.DarkMode == DarkModeType.MusicBeeTheme)
                     {
-                        enableDarkMode = IsColorDark(themeBackgroundColor);
+                        enableDarkMode =! IsColorDark(themeForegroundColor);
+                        Debug.WriteLine($"Dark mode {enableDarkMode}, themeForegroundColor: {themeForegroundColor.ToString()} ");
                     }
                     
                     if (enableDarkMode)
