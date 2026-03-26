@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -266,6 +266,25 @@ namespace MusicBeePlugin
                 {
                     MessageBox.Show(Strings.ExtensionUninstallFailed + " " + ex.Message, Strings.FormTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+            }
+        }
+
+        private void LinkProject_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            try
+            {
+                string url = Strings.ProjectLinkUrl;
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+                linkProject.LinkVisited = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Open project link error: " + ex.Message);
+                MessageBox.Show("Failed to open project link: " + ex.Message, Strings.FormTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

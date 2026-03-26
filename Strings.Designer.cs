@@ -279,5 +279,17 @@ namespace MusicBeePlugin {
                 return ResourceManager.GetString("RestartRequiredForExtensionChanges", resourceCulture);
             }
         }
+        
+        internal static string ProjectLink {
+            get {
+                return ResourceManager.GetString("ProjectLink", resourceCulture);
+            }
+        }
+        
+        internal static string ProjectLinkUrl {
+            get {
+                return ResourceManager.GetString("ProjectLinkUrl", resourceCulture);
+            }
+        }
     }
 }

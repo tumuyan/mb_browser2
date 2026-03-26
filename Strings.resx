@@ -28,7 +28,7 @@
     <value>Cancel</value>
   </data>
   <data name="RestartHint" xml:space="preserve">
-    <value>Some settings require restarting MusicBee to take effect.</value>
+    <value>Some settings require restarting MusicBee.</value>
   </data>
   <data name="ShowAddressBar" xml:space="preserve">
     <value>Show address bar</value>
@@ -137,5 +137,11 @@
   </data>
   <data name="RestartRequiredForExtensionChanges" xml:space="preserve">
     <value>Extension changes require restarting WebView2 to take effect. Please close and reopen the browser.</value>
+  </data>
+  <data name="ProjectLink" xml:space="preserve">
+    <value>Project Link</value>
+  </data>
+  <data name="ProjectLinkUrl" xml:space="preserve">
+    <value>https://github.com/tumuyan/mb_browser2/releases</value>
   </data>
 </root>

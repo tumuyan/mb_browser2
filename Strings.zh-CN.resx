@@ -136,6 +136,12 @@
     <value>找不到 manifest.json 文件。</value>
   </data>
   <data name="RestartRequiredForExtensionChanges" xml:space="preserve">
-    <value>扩展更改需要重启 WebView2 才能生效。请关闭并重新打开浏览器。</value>
+    <value>扩展更改需要重启 WebView2 才能生效。</value>
+  </data>
+  <data name="ProjectLink" xml:space="preserve">
+    <value>项目链接</value>
+  </data>
+  <data name="ProjectLinkUrl" xml:space="preserve">
+    <value>https://github.com/tumuyan/mb_browser2/releases</value>
   </data>
 </root>
