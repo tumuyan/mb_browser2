@@ -85,10 +85,6 @@ namespace MusicBeePlugin
         private BrowserSettings settings = new BrowserSettings();
         private bool isSettingsDirty;
 
-        private ToolStripMenuItem playNowMenuItem;
-        private ToolStripMenuItem queueNextMenuItem;
-        private ToolStripMenuItem queueLastMenuItem;
-
         private ContextMenuStrip bookmarkContextMenu;
 
         private EventHandler openHandler;
@@ -110,7 +106,7 @@ namespace MusicBeePlugin
             about.Type = PluginType.WebBrowser;
             about.VersionMajor = 1;
             about.VersionMinor = 0;
-            about.Revision = 3;
+            about.Revision = 4;
             about.Description = $"A modern web browser based on WebView2. (v{about.VersionMajor}.{about.VersionMinor}.{about.Revision})";
             about.MinInterfaceVersion = MinInterfaceVersion;
             about.MinApiRevision = MinApiRevision;
@@ -681,19 +677,6 @@ namespace MusicBeePlugin
         private Rectangle RefreshStopButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 0) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
         private Rectangle BookmarkButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 1) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
         private Rectangle BookmarkListButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 2) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
-
-        private bool isMouseOverBack;
-        private bool isMouseOverForward;
-        private bool isMouseOverHome;
-        
-        // Header 自动隐藏相关
-// 已废弃：Header 自动隐藏相关字段
-        // private bool isHeaderVisible = false;
-        // private System.Windows.Forms.Timer headerHideTimer;
-        // private const int HEADER_HIDE_DELAY = 2000;
-        // private const int HEADER_SHOW_TRIGGER_Y = 16;
-        // private const int HEADER_FULL_HEIGHT = 43;
-        // private const int HEADER_HIDDEN_HEIGHT = 0;
         
         private const int HEADER_FULL_HEIGHT = 43; // header 固定高度
 
@@ -1161,6 +1144,7 @@ namespace MusicBeePlugin
                 settings.ZoomFactor = browser.ZoomFactor;
                 isSettingsDirty = true;
                 Debug.WriteLine("Browser2: ZoomFactor changed to " + browser.ZoomFactor);
+                SaveSettings();
             }
         }
 
@@ -1237,30 +1221,6 @@ namespace MusicBeePlugin
             currentIsFavourite = false;
             
 
-        }
-
-        private void ScanStarting(object sender, EventArgs e)
-        {
-        }
-
-        private void ItemScanned(MediaFile file)
-        {
-        }
-
-        private void ScanCompleted(object sender, EventArgs e)
-        {
-        }
-
-        private class MediaFile
-        {
-            public string Url;
-            public string Status;
-            public string Artist;
-            public string Title;
-            public string Album;
-            public string Size;
-            public string Duration;
-            public string Origin;
         }
     }
 }
