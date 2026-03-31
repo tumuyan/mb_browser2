@@ -190,14 +190,7 @@ namespace MusicBeePlugin
             settings.DarkMode = (DarkModeType)cmbDarkMode.SelectedIndex;
             settings.EnableExtensions = chkEnableExtensions.Checked;
 
-            if (settings.DefaultUrl != originalDefaultUrl || 
-                settings.AutoSaveZoom != originalAutoSaveZoom ||
-                settings.ShowAddressBar != originalShowAddressBar ||
-                settings.DarkMode != originalDarkMode ||
-                settings.EnableExtensions != originalEnableExtensions)
-            {
-                SettingsChanged = true;
-            }
+            SettingsChanged = true;
 
             this.DialogResult = DialogResult.OK;
             this.Close();

@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3908-prerelease" />
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
-    <PackageReference Include="System.Text.Json" Version="8.0.6" />
+    <PackageReference Include="System.Text.Json" Version="10.0.5" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.IO.Compression" />
