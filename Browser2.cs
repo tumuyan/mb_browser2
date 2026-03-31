@@ -935,6 +935,7 @@ namespace MusicBeePlugin
                         SaveSettings();
                         mbApiInterface.MB_SetBackgroundTaskMessage("Bookmark has been saved");
                         currentIsFavourite = true;
+                        header?.Invalidate(BookmarkButtonBounds);
                     }
                 }
             }
