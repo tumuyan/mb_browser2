@@ -11,6 +11,8 @@ using System.IO;
 using System.Resources;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MusicBeePlugin
@@ -60,10 +62,13 @@ namespace MusicBeePlugin
         private PluginInfo about = new PluginInfo();
 
         private UserControl panel;
+        private Control dockPanel;
         private Control header;
         private WebView2 browser;
         private TextBox locationBar;
         private Control locationBarPrompt;
+
+        private System.Windows.Forms.Timer dockInitTimer;
 
         private bool isLoading;
         private string activeUrl;
@@ -232,12 +237,51 @@ namespace MusicBeePlugin
             panel?.Dispose();
             panel = null;
             
+            // 释放 dockPanel
+            dockPanel = null;
+            
             // webViewEnvironment 不需要释放 (CoreWebView2Environment 未实现 IDisposable)
             webViewEnvironment = null;
         }
 
         public void Uninstall()
         {
+        }
+
+        public int OnDockablePanelCreated(Control panel)
+        {
+            Log.General("Browser2: OnDockablePanelCreated called");
+            
+            if (dockPanel != null)
+            {
+                Log.General("Browser2: Dock panel already exists");
+                return 0;
+            }
+            
+            dockPanel = panel;
+            shouldBrowserBeVisible = true;
+            
+            Log.General("Browser2: Dock panel saved, starting init Timer (field variable)");
+            
+            if (dockInitTimer != null)
+            {
+                dockInitTimer.Stop();
+                dockInitTimer.Dispose();
+            }
+            
+            dockInitTimer = new System.Windows.Forms.Timer();
+            dockInitTimer.Interval = 500;
+            dockInitTimer.Tick += (s, e) =>
+            {
+                dockInitTimer.Stop();
+                dockInitTimer.Dispose();
+                dockInitTimer = null;
+                Log.General("Browser2: Dock init Timer fired, initializing browser for dock panel");
+                InitializeBrowserForDockPanel();
+            };
+            dockInitTimer.Start();
+            
+            return 0;
         }
 
         public void ReceiveNotification(string sourceFileUrl, NotificationType type)
@@ -278,6 +322,9 @@ namespace MusicBeePlugin
 
                         //暂不添加到菜单中
                         //mbApiInterface.MB_AddMenuItem("mnuTools/Browser2", "Browser2", openHandler);
+                        
+                        // 预初始化 WebView2 环境
+                        PreInitializeWebView2Environment();
                     }
                     catch (Exception ex)
                     {
@@ -478,17 +525,23 @@ namespace MusicBeePlugin
             }
         }
 
-        private async void InitializeWebView2AndAddPanel()
+        private void PreInitializeWebView2Environment()
+        {
+            Log.General("Browser2: PreInitializeWebView2Environment - skipped, will init on UI thread");
+        }
+
+        private async Task InitializeWebView2OnUIThreadAsync()
         {
             if (browser?.CoreWebView2 != null)
             {
-                Log.General("WebView2 already initialized, adding panel");
-                AddPanelToMusicBee();
+                Log.General("WebView2 already initialized");
                 return;
             }
             try
             {
-                Log.General("开始 InitializeWebView2");
+                Log.General("Browser2: InitializeWebView2OnUIThreadAsync started");
+                Log.General("Browser2: Thread ID = " + Thread.CurrentThread.ManagedThreadId + ", Apartment = " + Thread.CurrentThread.GetApartmentState());
+                
                 if (webViewEnvironment == null)
                 {
                     var envSettings = new CoreWebView2EnvironmentOptions();
@@ -534,9 +587,11 @@ namespace MusicBeePlugin
                         Log.Extension("Browser2: AdditionalBrowserArguments: " + envSettings.AdditionalBrowserArguments);
                     }
                     
+                    Log.General("Browser2: Calling CoreWebView2Environment.CreateAsync on UI thread");
                     webViewEnvironment = await CoreWebView2Environment.CreateAsync(null, null, envSettings);
-                    Log.General("WebView2 Environment created");
+                    Log.General("Browser2: WebView2 Environment created");
                 }
+                
                 await browser.EnsureCoreWebView2Async(webViewEnvironment);
                 Log.General("WebView2 Initialize completed");
                 
@@ -554,12 +609,31 @@ namespace MusicBeePlugin
                 }
                 
                 Log.General("Browser2: WebView2 initialized");
-                AddPanelToMusicBee();
             }
             catch (Exception ex)
             {
                 Log.General("WebView2 init error: " + ex);
                 Log.General("Browser2: WebView2 init error: " + ex.Message);
+                throw;
+            }
+        }
+
+        private void InitializeWebView2Sync()
+        {
+            Log.General("Browser2: InitializeWebView2Sync - delegating to async method");
+            InitializeWebView2OnUIThreadAsync().Wait();
+        }
+
+        private async void InitializeWebView2AndAddPanel()
+        {
+            try
+            {
+                await InitializeWebView2OnUIThreadAsync();
+                AddPanelToMusicBee();
+            }
+            catch (Exception ex)
+            {
+                Log.General("WebView2 init error: " + ex.Message);
                 MessageBox.Show("WebView2 init error: " + ex.Message, "Browser2 Error");
             }
         }
@@ -605,10 +679,140 @@ namespace MusicBeePlugin
 
         private void AddPanelToMusicBee()
         {
-            mbApiInterface.MB_AddPanel(panel, PluginPanelDock.MainPanel);
-            Log.General("Browser2: Panel added to MainPanel");
-            RegisterFormResizeEvent();
+            if (dockPanel == null)
+            {
+                mbApiInterface.MB_AddPanel(panel, PluginPanelDock.MainPanel);
+                Log.General("Browser2: Panel added to MainPanel");
+                RegisterFormResizeEvent();
+            }
+            else
+            {
+                AddBrowserToDockPanel();
+            }
             TryNavigate();
+        }
+
+        private async void InitializeBrowserForDockPanel()
+        {
+            Log.General("Browser2: InitializeBrowserForDockPanel started");
+            
+            if (dockPanel == null)
+            {
+                Log.General("Browser2: dockPanel is null, returning");
+                return;
+            }
+
+            try
+            {
+                Font font = mbApiInterface.Setting_GetDefaultFont();
+
+                if (settings.ShowAddressBar)
+                {
+                    if (string.IsNullOrEmpty(settings.DefaultUrl))
+                    {
+                        locationBarPrompt = new Control();
+                        locationBarPrompt.BackColor = Color.White;
+                        locationBarPrompt.ForeColor = Color.FromArgb(115, 115, 115);
+                        locationBarPrompt.Font = new Font(font, FontStyle.Italic);
+                        locationBarPrompt.TabStop = false;
+                        locationBarPrompt.Cursor = Cursors.IBeam;
+                        locationBarPrompt.Text = "Enter address or select a bookmark";
+                        locationBarPrompt.Paint += LocationBarPrompt_Paint;
+                        locationBarPrompt.MouseDown += LocationBarPrompt_MouseDown;
+                    }
+
+                    locationBar = new TextBox();
+                    locationBar.BorderStyle = BorderStyle.FixedSingle;
+                    locationBar.BackColor = themeBackgroundColor;
+                    locationBar.ForeColor = themeForegroundColor;
+                    locationBar.Font = font;
+                    locationBar.TabStop = true;
+                    locationBar.KeyDown += LocationBar_KeyDown;
+
+                    header = new Control();
+                    header.Height = 43;
+                    header.Controls.Add(locationBarPrompt ?? new Control());
+                    header.Controls.Add(locationBar);
+                    header.Dock = DockStyle.Top;
+                    header.Height = HEADER_FULL_HEIGHT;
+                    header.TabStop = false;
+                    header.Paint += Header_Paint;
+                    header.Resize += Header_Resize;
+                    header.MouseClick += Header_MouseClick;
+                }
+
+                browser = new WebView2();
+                browser.Dock = DockStyle.Fill;
+                browser.TabStop = false;
+                browser.NavigationStarting += Browser_NavigationStarting;
+                browser.NavigationCompleted += Browser_NavigationCompleted;
+                browser.SourceChanged += Browser_SourceChanged;
+
+                Log.General("Browser2: Controls created, initializing WebView2 on UI thread");
+                
+                await InitializeWebView2OnUIThreadAsync();
+                
+                if (dockPanel != null)
+                {
+                    dockPanel.SuspendLayout();
+                    dockPanel.Controls.Add(browser);
+                    if (settings.ShowAddressBar && header != null)
+                    {
+                        dockPanel.Controls.Add(header);
+                    }
+                    dockPanel.ResumeLayout();
+                    Log.General("Browser2: Browser added to dock panel");
+                }
+                
+                TryNavigate();
+            }
+            catch (Exception ex)
+            {
+                Log.General("Browser2: InitializeBrowserForDockPanel error: " + ex.Message);
+                Log.General("Browser2: Stack trace: " + ex.StackTrace);
+            }
+        }
+
+        private void AddBrowserToDockPanel()
+        {
+            if (dockPanel != null && browser != null)
+            {
+                dockPanel.SuspendLayout();
+                dockPanel.Controls.Clear();
+                dockPanel.Controls.Add(browser);
+                if (settings.ShowAddressBar && header != null)
+                {
+                    dockPanel.Controls.Add(header);
+                }
+                dockPanel.ResumeLayout();
+                Log.General("Browser2: Browser added to dock panel");
+            }
+        }
+
+        private void ResizeHeaderForDockPanel()
+        {
+            if (locationBar != null && header != null && dockPanel != null)
+            {
+                int leftButtonWidth = (LEFT_MARGIN_BUTTONS + 3) * BUTTON_WIDTH;
+                int rightButtonWidth = (RIGHT_MARGIN_BUTTONS + 3) * BUTTON_WIDTH;
+                int buttonSpacing = 4;
+                
+                int locationBarX = leftButtonWidth + buttonSpacing;
+                int locationBarWidth = dockPanel.Width - leftButtonWidth - rightButtonWidth - buttonSpacing * 2;
+                
+                if (locationBarWidth < 0)
+                {
+                    locationBarWidth = 0;
+                }
+                
+                int locationBarY = 2;
+                locationBar.Bounds = new Rectangle(locationBarX, locationBarY, locationBarWidth, locationBar.Font.Height + 6);
+                
+                if (locationBarPrompt != null)
+                {
+                    locationBarPrompt.Bounds = new Rectangle(locationBar.Left + 1, locationBar.Top, locationBar.Width - 1, locationBar.Height);
+                }
+            }
         }
         
         private CoreWebView2Environment webViewEnvironment;
