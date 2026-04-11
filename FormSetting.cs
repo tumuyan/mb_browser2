@@ -14,6 +14,7 @@ namespace MusicBeePlugin
         private bool originalShowAddressBar;
         private DarkModeType originalDarkMode;
         private bool originalEnableExtensions;
+        private string originalUrlDecodeChars;
         public bool SettingsChanged { get; private set; }
 
         private string extensionsFolderPath;
@@ -31,6 +32,7 @@ namespace MusicBeePlugin
             this.originalShowAddressBar = settings.ShowAddressBar;
             this.originalDarkMode = settings.DarkMode;
             this.originalEnableExtensions = settings.EnableExtensions;
+            this.originalUrlDecodeChars = settings.UrlDecodeChars ?? "";
             this.SettingsChanged = false;
 
             txtDefaultUrl.Text = settings.DefaultUrl ?? "";
@@ -38,6 +40,7 @@ namespace MusicBeePlugin
             chkShowAddressBar.Checked = settings.ShowAddressBar;
             cmbDarkMode.SelectedIndex = (int)settings.DarkMode;
             chkEnableExtensions.Checked = settings.EnableExtensions;
+            txtUrlDecodeChars.Text = settings.UrlDecodeChars ?? "";
 
             btnSave.Click += BtnSave_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -189,6 +192,7 @@ namespace MusicBeePlugin
             settings.ShowAddressBar = chkShowAddressBar.Checked;
             settings.DarkMode = (DarkModeType)cmbDarkMode.SelectedIndex;
             settings.EnableExtensions = chkEnableExtensions.Checked;
+            settings.UrlDecodeChars = txtUrlDecodeChars.Text.Trim();
 
             SettingsChanged = true;
 

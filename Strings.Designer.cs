@@ -291,5 +291,17 @@ namespace MusicBeePlugin {
                 return ResourceManager.GetString("ProjectLinkUrl", resourceCulture);
             }
         }
+
+        internal static string UrlDecodeCharsLabel {
+            get {
+                return ResourceManager.GetString("UrlDecodeCharsLabel", resourceCulture);
+            }
+        }
+
+        internal static string UrlDecodeCharsHint {
+            get {
+                return ResourceManager.GetString("UrlDecodeCharsHint", resourceCulture);
+            }
+        }
     }
 }

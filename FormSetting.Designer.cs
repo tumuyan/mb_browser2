@@ -24,6 +24,8 @@ namespace MusicBeePlugin
             this.lblDarkMode = new System.Windows.Forms.Label();
             this.cmbDarkMode = new System.Windows.Forms.ComboBox();
             this.chkEnableExtensions = new System.Windows.Forms.CheckBox();
+            this.lblUrlDecodeChars = new System.Windows.Forms.Label();
+            this.txtUrlDecodeChars = new System.Windows.Forms.TextBox();
             this.btnOpenExtensionsFolder = new System.Windows.Forms.Button();
             this.btnInstallUnpackedExtension = new System.Windows.Forms.Button();
             this.lblInstalledExtensions = new System.Windows.Forms.Label();
@@ -46,14 +48,14 @@ namespace MusicBeePlugin
             this.lblHomePage.Name = "lblHomePage";
             this.lblHomePage.Size = new System.Drawing.Size(98, 18);
             this.lblHomePage.TabIndex = 16;
-            this.lblHomePage.Text = global::MusicBeePlugin.Strings.HomePage;
+            this.lblHomePage.Text = "Home Page:";
             // 
             // txtDefaultUrl
             // 
             this.txtDefaultUrl.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.txtDefaultUrl.Location = new System.Drawing.Point(113, 14);
-            this.txtDefaultUrl.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtDefaultUrl.Margin = new System.Windows.Forms.Padding(4);
             this.txtDefaultUrl.Name = "txtDefaultUrl";
             this.txtDefaultUrl.Size = new System.Drawing.Size(487, 28);
             this.txtDefaultUrl.TabIndex = 1;
@@ -62,7 +64,7 @@ namespace MusicBeePlugin
             // 
             this.chkAutoSaveZoom.AutoSize = true;
             this.chkAutoSaveZoom.Location = new System.Drawing.Point(19, 54);
-            this.chkAutoSaveZoom.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkAutoSaveZoom.Margin = new System.Windows.Forms.Padding(4);
             this.chkAutoSaveZoom.Name = "chkAutoSaveZoom";
             this.chkAutoSaveZoom.Size = new System.Drawing.Size(223, 22);
             this.chkAutoSaveZoom.TabIndex = 15;
@@ -73,7 +75,7 @@ namespace MusicBeePlugin
             // 
             this.chkShowAddressBar.AutoSize = true;
             this.chkShowAddressBar.Location = new System.Drawing.Point(19, 84);
-            this.chkShowAddressBar.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkShowAddressBar.Margin = new System.Windows.Forms.Padding(4);
             this.chkShowAddressBar.Name = "chkShowAddressBar";
             this.chkShowAddressBar.Size = new System.Drawing.Size(178, 22);
             this.chkShowAddressBar.TabIndex = 14;
@@ -88,7 +90,7 @@ namespace MusicBeePlugin
             this.lblDarkMode.Name = "lblDarkMode";
             this.lblDarkMode.Size = new System.Drawing.Size(98, 18);
             this.lblDarkMode.TabIndex = 12;
-            this.lblDarkMode.Text = global::MusicBeePlugin.Strings.DarkModeLabel;
+            this.lblDarkMode.Text = "Dark mode:";
             // 
             // cmbDarkMode
             // 
@@ -99,7 +101,7 @@ namespace MusicBeePlugin
             global::MusicBeePlugin.Strings.DarkModeDark,
             global::MusicBeePlugin.Strings.DarkModeMusicBeeTheme});
             this.cmbDarkMode.Location = new System.Drawing.Point(113, 116);
-            this.cmbDarkMode.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cmbDarkMode.Margin = new System.Windows.Forms.Padding(4);
             this.cmbDarkMode.Name = "cmbDarkMode";
             this.cmbDarkMode.Size = new System.Drawing.Size(153, 26);
             this.cmbDarkMode.TabIndex = 4;
@@ -107,18 +109,38 @@ namespace MusicBeePlugin
             // chkEnableExtensions
             // 
             this.chkEnableExtensions.AutoSize = true;
-            this.chkEnableExtensions.Location = new System.Drawing.Point(19, 154);
-            this.chkEnableExtensions.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.chkEnableExtensions.Location = new System.Drawing.Point(19, 189);
+            this.chkEnableExtensions.Margin = new System.Windows.Forms.Padding(4);
             this.chkEnableExtensions.Name = "chkEnableExtensions";
             this.chkEnableExtensions.Size = new System.Drawing.Size(322, 22);
             this.chkEnableExtensions.TabIndex = 11;
             this.chkEnableExtensions.Text = global::MusicBeePlugin.Strings.EnableExtensions;
             this.chkEnableExtensions.UseVisualStyleBackColor = true;
             // 
+            // lblUrlDecodeChars
+            // 
+            this.lblUrlDecodeChars.AutoSize = true;
+            this.lblUrlDecodeChars.Location = new System.Drawing.Point(15, 443);
+            this.lblUrlDecodeChars.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblUrlDecodeChars.Name = "lblUrlDecodeChars";
+            this.lblUrlDecodeChars.Size = new System.Drawing.Size(233, 18);
+            this.lblUrlDecodeChars.TabIndex = 17;
+            this.lblUrlDecodeChars.Text = "Decode characters in url:";
+            // 
+            // txtUrlDecodeChars
+            // 
+            this.txtUrlDecodeChars.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtUrlDecodeChars.Location = new System.Drawing.Point(15, 465);
+            this.txtUrlDecodeChars.Margin = new System.Windows.Forms.Padding(4);
+            this.txtUrlDecodeChars.Name = "txtUrlDecodeChars";
+            this.txtUrlDecodeChars.Size = new System.Drawing.Size(585, 28);
+            this.txtUrlDecodeChars.TabIndex = 7;
+            // 
             // btnOpenExtensionsFolder
             // 
-            this.btnOpenExtensionsFolder.Location = new System.Drawing.Point(15, 186);
-            this.btnOpenExtensionsFolder.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnOpenExtensionsFolder.Location = new System.Drawing.Point(15, 226);
+            this.btnOpenExtensionsFolder.Margin = new System.Windows.Forms.Padding(4);
             this.btnOpenExtensionsFolder.Name = "btnOpenExtensionsFolder";
             this.btnOpenExtensionsFolder.Size = new System.Drawing.Size(141, 30);
             this.btnOpenExtensionsFolder.TabIndex = 5;
@@ -127,8 +149,8 @@ namespace MusicBeePlugin
             // 
             // btnInstallUnpackedExtension
             // 
-            this.btnInstallUnpackedExtension.Location = new System.Drawing.Point(165, 186);
-            this.btnInstallUnpackedExtension.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnInstallUnpackedExtension.Location = new System.Drawing.Point(165, 226);
+            this.btnInstallUnpackedExtension.Margin = new System.Windows.Forms.Padding(4);
             this.btnInstallUnpackedExtension.Name = "btnInstallUnpackedExtension";
             this.btnInstallUnpackedExtension.Size = new System.Drawing.Size(167, 30);
             this.btnInstallUnpackedExtension.TabIndex = 6;
@@ -138,12 +160,12 @@ namespace MusicBeePlugin
             // lblInstalledExtensions
             // 
             this.lblInstalledExtensions.AutoSize = true;
-            this.lblInstalledExtensions.Location = new System.Drawing.Point(15, 226);
+            this.lblInstalledExtensions.Location = new System.Drawing.Point(15, 266);
             this.lblInstalledExtensions.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblInstalledExtensions.Name = "lblInstalledExtensions";
             this.lblInstalledExtensions.Size = new System.Drawing.Size(197, 18);
             this.lblInstalledExtensions.TabIndex = 10;
-            this.lblInstalledExtensions.Text = global::MusicBeePlugin.Strings.InstalledExtensions;
+            this.lblInstalledExtensions.Text = "Installed Extensions:";
             // 
             // lstExtensions
             // 
@@ -155,8 +177,8 @@ namespace MusicBeePlugin
             this.colEnabled});
             this.lstExtensions.FullRowSelect = true;
             this.lstExtensions.HideSelection = false;
-            this.lstExtensions.Location = new System.Drawing.Point(15, 252);
-            this.lstExtensions.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.lstExtensions.Location = new System.Drawing.Point(15, 292);
+            this.lstExtensions.Margin = new System.Windows.Forms.Padding(4);
             this.lstExtensions.MultiSelect = false;
             this.lstExtensions.Name = "lstExtensions";
             this.lstExtensions.Size = new System.Drawing.Size(487, 143);
@@ -181,8 +203,8 @@ namespace MusicBeePlugin
             // btnUninstallExtension
             // 
             this.btnUninstallExtension.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnUninstallExtension.Location = new System.Drawing.Point(512, 252);
-            this.btnUninstallExtension.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnUninstallExtension.Location = new System.Drawing.Point(512, 292);
+            this.btnUninstallExtension.Margin = new System.Windows.Forms.Padding(4);
             this.btnUninstallExtension.Name = "btnUninstallExtension";
             this.btnUninstallExtension.Size = new System.Drawing.Size(90, 30);
             this.btnUninstallExtension.TabIndex = 9;
@@ -193,33 +215,33 @@ namespace MusicBeePlugin
             // 
             this.lblRestartHint.AutoSize = true;
             this.lblRestartHint.ForeColor = System.Drawing.Color.Gray;
-            this.lblRestartHint.Location = new System.Drawing.Point(15, 406);
+            this.lblRestartHint.Location = new System.Drawing.Point(15, 497);
             this.lblRestartHint.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblRestartHint.Name = "lblRestartHint";
-            this.lblRestartHint.Size = new System.Drawing.Size(521, 18);
+            this.lblRestartHint.Size = new System.Drawing.Size(386, 18);
             this.lblRestartHint.TabIndex = 13;
-            this.lblRestartHint.Text = global::MusicBeePlugin.Strings.RestartHint;
+            this.lblRestartHint.Text = "Some settings require restarting MusicBee.";
             // 
             // linkProject
             // 
             this.linkProject.AutoSize = true;
             this.linkProject.LinkArea = new System.Windows.Forms.LinkArea(5, 51);
             this.linkProject.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
-            this.linkProject.Location = new System.Drawing.Point(15, 438);
+            this.linkProject.Location = new System.Drawing.Point(15, 529);
             this.linkProject.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.linkProject.Name = "linkProject";
             this.linkProject.Size = new System.Drawing.Size(563, 26);
             this.linkProject.TabIndex = 12;
             this.linkProject.TabStop = true;
-            this.linkProject.Text = global::MusicBeePlugin.Strings.ProjectLink + " " + global::MusicBeePlugin.Strings.ProjectLinkUrl;
+            this.linkProject.Text = "Project Link https://github.com/tumuyan/mb_browser2/releases";
             this.linkProject.UseCompatibleTextRendering = true;
             this.linkProject.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.LinkProject_LinkClicked);
             // 
             // btnSave
             // 
             this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSave.Location = new System.Drawing.Point(396, 478);
-            this.btnSave.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnSave.Location = new System.Drawing.Point(396, 563);
+            this.btnSave.Margin = new System.Windows.Forms.Padding(4);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(103, 30);
             this.btnSave.TabIndex = 10;
@@ -230,8 +252,8 @@ namespace MusicBeePlugin
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(507, 478);
-            this.btnCancel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnCancel.Location = new System.Drawing.Point(501, 563);
+            this.btnCancel.Margin = new System.Windows.Forms.Padding(4);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(103, 30);
             this.btnCancel.TabIndex = 11;
@@ -244,12 +266,14 @@ namespace MusicBeePlugin
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(617, 523);
+            this.ClientSize = new System.Drawing.Size(617, 608);
             this.Controls.Add(this.btnUninstallExtension);
             this.Controls.Add(this.lstExtensions);
             this.Controls.Add(this.lblInstalledExtensions);
             this.Controls.Add(this.btnInstallUnpackedExtension);
             this.Controls.Add(this.btnOpenExtensionsFolder);
+            this.Controls.Add(this.txtUrlDecodeChars);
+            this.Controls.Add(this.lblUrlDecodeChars);
             this.Controls.Add(this.chkEnableExtensions);
             this.Controls.Add(this.cmbDarkMode);
             this.Controls.Add(this.lblDarkMode);
@@ -262,13 +286,13 @@ namespace MusicBeePlugin
             this.Controls.Add(this.txtDefaultUrl);
             this.Controls.Add(this.lblHomePage);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "FormSetting";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = global::MusicBeePlugin.Strings.FormTitle;
+            this.Text = "Browser2 Settings";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -296,5 +320,7 @@ namespace MusicBeePlugin
         private System.Windows.Forms.LinkLabel linkProject;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Label lblUrlDecodeChars;
+        private System.Windows.Forms.TextBox txtUrlDecodeChars;
     }
 }

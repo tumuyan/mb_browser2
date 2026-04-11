@@ -106,7 +106,7 @@ namespace MusicBeePlugin
             about.Type = PluginType.WebBrowser;
             about.VersionMajor = 1;
             about.VersionMinor = 0;
-            about.Revision = 5;
+            about.Revision = 6;
             about.Description = $"A modern web browser based on WebView2. (v{about.VersionMajor}.{about.VersionMinor}.{about.Revision})";
             about.MinInterfaceVersion = MinInterfaceVersion;
             about.MinApiRevision = MinApiRevision;
@@ -1048,10 +1048,37 @@ namespace MusicBeePlugin
             NavigateTo(url);
         }
 
+        private string DecodeUrlIfNeeded(string url)
+        {
+            if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(settings.UrlDecodeChars))
+            {
+                return url;
+            }
+
+            if (!url.Contains("%"))
+            {
+                return url;
+            }
+
+            string result = url;
+            foreach (char c in settings.UrlDecodeChars)
+            {
+                string encoded = Uri.HexEscape(c);
+                if (result.Contains(encoded))
+                {
+                    result = result.Replace(encoded, c.ToString());
+                }
+            }
+
+            return result;
+        }
+
         private void NavigateTo(string url)
         {
             try
             {
+                url = DecodeUrlIfNeeded(url);
+
                 int index = url.IndexOf("<Artist>", StringComparison.OrdinalIgnoreCase);
                 if (index != -1)
                 {
