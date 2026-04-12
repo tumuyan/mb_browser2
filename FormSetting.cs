@@ -54,7 +54,7 @@ namespace MusicBeePlugin
             LoadInstalledExtensions();
         }
 
-        private async void LoadInstalledExtensions()
+        private void LoadInstalledExtensions()
         {
             lstExtensions.Items.Clear();
             
@@ -63,7 +63,9 @@ namespace MusicBeePlugin
                 return;
             }
 
-            var extensions = await ExtensionManager.GetAllExtensionsAsync(profile, extensionsFolderPath);
+            var extensions = ExtensionManager.CachedExtensions.Count > 0
+                ? ExtensionManager.CachedExtensions
+                : ExtensionManager.GetAllExtensions(extensionsFolderPath);
             
             foreach (var ext in extensions)
             {

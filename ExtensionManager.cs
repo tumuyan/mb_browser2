@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -8,9 +9,6 @@ using System.Windows.Forms;
 
 namespace MusicBeePlugin
 {
-    /// <summary>
-    /// 扩展信息类
-    /// </summary>
     public class ExtensionInfo
     {
         public string Name { get; set; }
@@ -18,24 +16,48 @@ namespace MusicBeePlugin
         public bool IsEnabled { get; set; }
         public string Path { get; set; }
         public string Id { get; set; }
+        public string OptionsUrl { get; set; }
+        public string PopupUrl { get; set; }
+        public string MainPageUrl { get; set; }
     }
 
-    /// <summary>
-    /// 扩展管理器 - 提供扩展安装、卸载、启用、禁用等功能
-    /// </summary>
     public static class ExtensionManager
     {
-        /// <summary>
-        /// 获取扩展目录路径
-        /// </summary>
+        private static List<ExtensionInfo> _cachedExtensions = new List<ExtensionInfo>();
+        private static Dictionary<string, string> _extensionIdMap = new Dictionary<string, string>();
+        private static string _extensionsPath;
+
+        public static string ExtensionsPath => _extensionsPath;
+        public static IReadOnlyList<ExtensionInfo> CachedExtensions => _cachedExtensions.AsReadOnly();
+
         public static string GetExtensionsPath(string storagePath)
         {
             return Path.Combine(storagePath, "Browser2Extensions");
         }
 
-        /// <summary>
-        /// 加载所有扩展
-        /// </summary>
+        public static void SetExtensionsPath(string path)
+        {
+            _extensionsPath = path;
+        }
+
+        public static string GetRealExtensionId(string extensionPath)
+        {
+            if (_extensionIdMap != null && _extensionIdMap.ContainsKey(extensionPath))
+            {
+                return _extensionIdMap[extensionPath];
+            }
+            return null;
+        }
+
+        public static void SetRealExtensionId(string extensionPath, string realId)
+        {
+            if (_extensionIdMap == null)
+            {
+                _extensionIdMap = new Dictionary<string, string>();
+            }
+            _extensionIdMap[extensionPath] = realId;
+        }
+
         public static async Task LoadExtensionsAsync(Microsoft.Web.WebView2.Core.CoreWebView2Profile profile)
         {
             if (profile == null)
@@ -45,17 +67,23 @@ namespace MusicBeePlugin
             }
 
             string extensionsPath = GetExtensionsPath(Path.GetDirectoryName(profile.ProfilePath));
+            _extensionsPath = extensionsPath;
             Debug.WriteLine("ExtensionManager: LoadExtensionsAsync started");
             Debug.WriteLine("ExtensionManager: Extensions path: " + extensionsPath);
 
             if (!Directory.Exists(extensionsPath))
             {
                 Debug.WriteLine("ExtensionManager: Extensions directory does not exist");
+                _cachedExtensions.Clear();
+                _extensionIdMap.Clear();
                 return;
             }
 
             try
             {
+                _cachedExtensions.Clear();
+                _extensionIdMap.Clear();
+
                 var extensionDirs = Directory.GetDirectories(extensionsPath);
                 Debug.WriteLine("ExtensionManager: Found " + extensionDirs.Length + " extension directories");
 
@@ -64,23 +92,63 @@ namespace MusicBeePlugin
                     Debug.WriteLine("ExtensionManager: Processing extension directory: " + extensionDir);
 
                     string manifestPath = Path.Combine(extensionDir, "manifest.json");
-                    Debug.WriteLine("ExtensionManager: Manifest path: " + manifestPath);
-                    Debug.WriteLine("ExtensionManager: Manifest exists: " + File.Exists(manifestPath));
-
                     bool isDisabled = false;
+                    string name = Path.GetFileName(extensionDir);
+                    string version = "Unknown";
+                    string optionsUrl = null;
+                    string popupUrl = null;
+
                     if (File.Exists(manifestPath))
                     {
                         try
                         {
                             string manifestContent = File.ReadAllText(manifestPath);
-                            Debug.WriteLine("ExtensionManager: Loading extension for WebView2: " + extensionDir);
-                            Debug.WriteLine("ExtensionManager: Manifest content (first 500 chars): " + manifestContent.Substring(0, Math.Min(500, manifestContent.Length)));
-
                             using (var doc = JsonDocument.Parse(manifestContent))
                             {
                                 var root = doc.RootElement;
-                                isDisabled = root.TryGetProperty("manifest_v2_disable", out var disableProp);
-                                Debug.WriteLine("ExtensionManager: Has manifest_v2_disable: " + isDisabled);
+
+                                isDisabled = root.TryGetProperty("manifest_v2_disable", out _);
+
+                                name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : name;
+                                version = root.TryGetProperty("version", out var versionProp) ? versionProp.GetString() : "Unknown";
+
+                                if (!string.IsNullOrEmpty(name) && name.StartsWith("__MSG_") && name.EndsWith("__"))
+                                {
+                                    string messageKey = name.Substring(6, name.Length - 8);
+                                    string localeName = GetExtensionLocalizedName(extensionDir, messageKey);
+                                    if (!string.IsNullOrEmpty(localeName))
+                                    {
+                                        name = localeName;
+                                    }
+                                }
+
+                                if (root.TryGetProperty("options_page", out var optionsPageProp))
+                                {
+                                    optionsUrl = optionsPageProp.GetString();
+                                }
+                                else if (root.TryGetProperty("options_ui", out var optionsUiProp))
+                                {
+                                    if (optionsUiProp.TryGetProperty("page", out var pageProp))
+                                    {
+                                        optionsUrl = pageProp.GetString();
+                                    }
+                                }
+
+                                if (root.TryGetProperty("action", out var actionProp))
+                                {
+                                    if (actionProp.TryGetProperty("default_popup", out var popupProp))
+                                        popupUrl = popupProp.GetString();
+                                }
+                                else if (root.TryGetProperty("browser_action", out var browserActionProp))
+                                {
+                                    if (browserActionProp.TryGetProperty("default_popup", out var popupProp))
+                                        popupUrl = popupProp.GetString();
+                                }
+                                else if (root.TryGetProperty("page_action", out var pageActionProp))
+                                {
+                                    if (pageActionProp.TryGetProperty("default_popup", out var popupProp))
+                                        popupUrl = popupProp.GetString();
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -89,66 +157,65 @@ namespace MusicBeePlugin
                         }
                     }
 
+                    string realId = null;
                     try
                     {
-                        // 使用 WebView2 官方 API 加载扩展，返回 CoreWebView2Extension 对象
                         var extension = await profile.AddBrowserExtensionAsync(extensionDir);
-                        Debug.WriteLine("ExtensionManager: Extension loaded successfully: " + extensionDir);
-                        Debug.WriteLine("ExtensionManager: Extension Id: " + extension?.Id);
-                        Debug.WriteLine("ExtensionManager: Extension Name: " + extension?.Name);
-                        
-                        // 根据 manifest 中的禁用状态调用 EnableAsync 方法
                         if (extension != null)
                         {
                             await extension.EnableAsync(!isDisabled);
-                            Debug.WriteLine("ExtensionManager: Extension " + (isDisabled ? "disabled" : "enabled") + " via EnableAsync: " + extension.Id);
-                            Debug.WriteLine("ExtensionManager: Extension IsEnabled property: " + extension.IsEnabled);
+                            realId = extension.Id;
+                            _extensionIdMap[extensionDir] = realId;
+                            Debug.WriteLine($"ExtensionManager: Extension loaded - Path: {extensionDir}, RealId: {realId}, IsEnabled: {extension.IsEnabled}");
                         }
                     }
                     catch (Exception ex)
                     {
                         Debug.WriteLine("ExtensionManager: Failed to load extension: " + extensionDir + " - " + ex.Message);
-                        Debug.WriteLine("ExtensionManager: Exception type: " + ex.GetType().FullName);
-                        Debug.WriteLine("ExtensionManager: Stack trace: " + ex.StackTrace);
                     }
+
+                    string mainPageUrl = null;
+                    if (string.IsNullOrEmpty(optionsUrl) && string.IsNullOrEmpty(popupUrl))
+                    {
+                        mainPageUrl = FindExtensionMainPage(extensionDir);
+                    }
+
+                    _cachedExtensions.Add(new ExtensionInfo
+                    {
+                        Name = name,
+                        Version = version,
+                        IsEnabled = !isDisabled,
+                        Path = extensionDir,
+                        Id = realId ?? Path.GetFileName(extensionDir),
+                        OptionsUrl = optionsUrl,
+                        PopupUrl = popupUrl,
+                        MainPageUrl = mainPageUrl
+                    });
                 }
+
+                Debug.WriteLine($"ExtensionManager: Total extensions cached: {_cachedExtensions.Count}");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("ExtensionManager: LoadExtensions error: " + ex.Message);
-                Debug.WriteLine("ExtensionManager: Exception type: " + ex.GetType().FullName);
-                Debug.WriteLine("ExtensionManager: Stack trace: " + ex.StackTrace);
             }
         }
 
-        /// <summary>
-        /// 获取所有扩展信息列表（从 WebView2 获取实时状态）
-        /// </summary>
         public static async Task<ExtensionInfo[]> GetAllExtensionsAsync(Microsoft.Web.WebView2.Core.CoreWebView2Profile profile, string extensionsPath)
         {
+            if (_cachedExtensions.Count > 0)
+            {
+                Debug.WriteLine("ExtensionManager: Returning cached extensions");
+                return _cachedExtensions.ToArray();
+            }
+
             if (!Directory.Exists(extensionsPath))
             {
                 return new ExtensionInfo[0];
             }
 
-            var extensions = new System.Collections.Generic.List<ExtensionInfo>();
-
-            // 首先获取 WebView2 已加载的扩展
-            var webViewExtensions = new System.Collections.Generic.Dictionary<string, Microsoft.Web.WebView2.Core.CoreWebView2BrowserExtension>();
-            
-            if (profile != null)
-            {
-                try
-                {
-                    // 注意：WebView2 没有直接获取所有扩展列表的 API
-                    // 我们需要通过加载扩展来获取 IsEnabled 状态
-                    Debug.WriteLine("ExtensionManager: Getting extension status from WebView2...");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("ExtensionManager: Failed to get WebView2 extensions: " + ex.Message);
-                }
-            }
+            _extensionsPath = extensionsPath;
+            var extensions = new List<ExtensionInfo>();
 
             foreach (string extensionDir in Directory.GetDirectories(extensionsPath))
             {
@@ -158,19 +225,12 @@ namespace MusicBeePlugin
                     try
                     {
                         string manifestJson = File.ReadAllText(manifestPath);
-                        Debug.WriteLine("ExtensionManager: Loading extension: " + extensionDir);
-                        Debug.WriteLine("ExtensionManager: Manifest content: " + manifestJson.Substring(0, Math.Min(200, manifestJson.Length)));
-
                         using (var doc = JsonDocument.Parse(manifestJson))
                         {
                             var root = doc.RootElement;
 
                             string name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : Path.GetFileName(extensionDir);
                             string version = root.TryGetProperty("version", out var versionProp) ? versionProp.GetString() : "Unknown";
-                            string id = root.TryGetProperty("id", out var idProp) ? idProp.GetString() : Path.GetFileName(extensionDir);
-
-                            Debug.WriteLine("ExtensionManager: Extension name: " + name);
-                            Debug.WriteLine("ExtensionManager: Has manifest_v2_disable: " + root.TryGetProperty("manifest_v2_disable", out _));
 
                             if (!string.IsNullOrEmpty(name) && name.StartsWith("__MSG_") && name.EndsWith("__"))
                             {
@@ -182,10 +242,44 @@ namespace MusicBeePlugin
                                 }
                             }
 
-                            bool isEnabled = !root.TryGetProperty("manifest_v2_disable", out var disableProp);
+                            bool isEnabled = !root.TryGetProperty("manifest_v2_disable", out _);
 
-                            Debug.WriteLine("ExtensionManager: Final name: " + name);
-                            Debug.WriteLine("ExtensionManager: Is enabled (from manifest): " + isEnabled);
+                            string optionsUrl = null;
+                            string popupUrl = null;
+
+                            if (root.TryGetProperty("options_page", out var optionsPageProp))
+                            {
+                                optionsUrl = optionsPageProp.GetString();
+                            }
+                            else if (root.TryGetProperty("options_ui", out var optionsUiProp))
+                            {
+                                if (optionsUiProp.TryGetProperty("page", out var pageProp))
+                                {
+                                    optionsUrl = pageProp.GetString();
+                                }
+                            }
+
+                            if (root.TryGetProperty("action", out var actionProp))
+                            {
+                                if (actionProp.TryGetProperty("default_popup", out var popupProp))
+                                    popupUrl = popupProp.GetString();
+                            }
+                            else if (root.TryGetProperty("browser_action", out var browserActionProp))
+                            {
+                                if (browserActionProp.TryGetProperty("default_popup", out var popupProp))
+                                    popupUrl = popupProp.GetString();
+                            }
+                            else if (root.TryGetProperty("page_action", out var pageActionProp))
+                            {
+                                if (pageActionProp.TryGetProperty("default_popup", out var popupProp))
+                                    popupUrl = popupProp.GetString();
+                            }
+
+                            string mainPageUrl = null;
+                            if (string.IsNullOrEmpty(optionsUrl) && string.IsNullOrEmpty(popupUrl))
+                            {
+                                mainPageUrl = FindExtensionMainPage(extensionDir);
+                            }
 
                             extensions.Add(new ExtensionInfo
                             {
@@ -193,7 +287,10 @@ namespace MusicBeePlugin
                                 Version = version,
                                 IsEnabled = isEnabled,
                                 Path = extensionDir,
-                                Id = id
+                                Id = Path.GetFileName(extensionDir),
+                                OptionsUrl = optionsUrl,
+                                PopupUrl = popupUrl,
+                                MainPageUrl = mainPageUrl
                             });
                         }
                     }
@@ -212,20 +309,19 @@ namespace MusicBeePlugin
                 }
             }
 
+            _cachedExtensions = extensions;
             return extensions.ToArray();
         }
 
-        /// <summary>
-        /// 获取所有扩展信息列表（从文件系统读取，不保证实时状态）
-        /// </summary>
         public static ExtensionInfo[] GetAllExtensions(string extensionsPath)
         {
+            if (_cachedExtensions.Count > 0)
+            {
+                return _cachedExtensions.ToArray();
+            }
             return GetAllExtensionsAsync(null, extensionsPath).Result;
         }
 
-        /// <summary>
-        /// 安装扩展（从文件夹复制）
-        /// </summary>
         public static void InstallExtension(string sourcePath, string extensionsPath)
         {
             string extensionName = Path.GetFileName(sourcePath);
@@ -237,22 +333,18 @@ namespace MusicBeePlugin
             }
 
             CopyDirectory(sourcePath, destPath);
+            InvalidateCache();
         }
 
-        /// <summary>
-        /// 卸载扩展
-        /// </summary>
         public static void UninstallExtension(string extensionPath)
         {
             if (Directory.Exists(extensionPath))
             {
                 Directory.Delete(extensionPath, true);
             }
+            InvalidateCache();
         }
 
-        /// <summary>
-        /// 切换扩展启用/禁用状态
-        /// </summary>
         public static bool ToggleExtension(string extensionPath, bool enable)
         {
             try
@@ -265,13 +357,10 @@ namespace MusicBeePlugin
                 }
 
                 string manifestJson = File.ReadAllText(manifestPath);
-                Debug.WriteLine("ExtensionManager: Original manifest: " + manifestJson.Substring(0, Math.Min(200, manifestJson.Length)));
-
                 string manifestCopy;
 
                 if (enable)
                 {
-                    Debug.WriteLine("ExtensionManager: Enabling extension...");
                     if (manifestJson.Contains("\"manifest_v2_disable\""))
                     {
                         manifestCopy = Regex.Replace(manifestJson, @",\s*""manifest_v2_disable"":\s*true\s*\}", "}");
@@ -292,7 +381,6 @@ namespace MusicBeePlugin
                 }
                 else
                 {
-                    Debug.WriteLine("ExtensionManager: Disabling extension...");
                     if (!manifestJson.Contains("\"manifest_v2_disable\""))
                     {
                         manifestJson = manifestJson.TrimEnd(' ', '\r', '\n');
@@ -311,12 +399,8 @@ namespace MusicBeePlugin
                     }
                 }
 
-                Debug.WriteLine("ExtensionManager: New manifest: " + manifestCopy.Substring(0, Math.Min(200, manifestCopy.Length)));
                 File.WriteAllText(manifestPath, manifestCopy);
-
-                string newContent = File.ReadAllText(manifestPath);
-                Debug.WriteLine("ExtensionManager: Verified manifest after write: " + newContent.Substring(0, Math.Min(200, newContent.Length)));
-
+                InvalidateCache();
                 return true;
             }
             catch (Exception ex)
@@ -326,18 +410,72 @@ namespace MusicBeePlugin
             }
         }
 
-        /// <summary>
-        /// 刷新扩展状态（重新加载所有扩展）
-        /// </summary>
+        public static void InvalidateCache()
+        {
+            _cachedExtensions.Clear();
+            Debug.WriteLine("ExtensionManager: Cache invalidated");
+        }
+
         public static async Task RefreshExtensionsAsync(Microsoft.Web.WebView2.Core.CoreWebView2Profile profile)
         {
             Debug.WriteLine("ExtensionManager: Refreshing all extensions...");
+            InvalidateCache();
             await LoadExtensionsAsync(profile);
         }
 
-        /// <summary>
-        /// 获取扩展本地化名称
-        /// </summary>
+        public static string FindExtensionMainPage(string extensionPath)
+        {
+            try
+            {
+                var priorityFiles = new[] {
+                    "index.html",
+                    "main.html",
+                    "app.html",
+                    "popup.html",
+                    "options.html",
+                    "home.html"
+                };
+
+                foreach (string fileName in priorityFiles)
+                {
+                    string filePath = Path.Combine(extensionPath, fileName);
+                    if (File.Exists(filePath))
+                    {
+                        Debug.WriteLine($"ExtensionManager: Found priority file '{fileName}'");
+                        return fileName;
+                    }
+                }
+
+                string[] htmlFiles = Directory.GetFiles(extensionPath, "*.html", SearchOption.TopDirectoryOnly);
+
+                if (htmlFiles.Length > 0)
+                {
+                    Array.Sort(htmlFiles, (a, b) =>
+                    {
+                        string nameA = Path.GetFileName(a).ToLower();
+                        string nameB = Path.GetFileName(b).ToLower();
+
+                        if (nameA.Contains("main") || nameA.Contains("index")) return -1;
+                        if (nameB.Contains("main") || nameB.Contains("index")) return 1;
+
+                        return string.Compare(nameA, nameB, StringComparison.OrdinalIgnoreCase);
+                    });
+
+                    string mainPage = Path.GetFileName(htmlFiles[0]);
+                    Debug.WriteLine($"ExtensionManager: Found main page '{mainPage}' from {htmlFiles.Length} HTML files");
+                    return mainPage;
+                }
+
+                Debug.WriteLine($"ExtensionManager: No HTML files found in {extensionPath}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ExtensionManager: FindExtensionMainPage error: {ex.Message}");
+                return null;
+            }
+        }
+
         public static string GetExtensionLocalizedName(string extensionDir, string messageKey)
         {
             try
@@ -390,9 +528,6 @@ namespace MusicBeePlugin
             return messageKey;
         }
 
-        /// <summary>
-        /// 复制目录
-        /// </summary>
         private static void CopyDirectory(string sourceDir, string destDir)
         {
             Directory.CreateDirectory(destDir);
