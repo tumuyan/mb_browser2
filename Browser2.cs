@@ -8,6 +8,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Resources;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
@@ -81,11 +82,13 @@ namespace MusicBeePlugin
         private Bitmap starFilledIcon;
         private Bitmap starLinedIcon;
         private Bitmap menuIcon;
+        private Bitmap settingsIcon;
 
         private BrowserSettings settings = new BrowserSettings();
         private bool isSettingsDirty;
 
         private ContextMenuStrip bookmarkContextMenu;
+        private System.Collections.Generic.Dictionary<string, string> extensionIdMap;
 
         private EventHandler openHandler;
         private EventHandler closeHandler;
@@ -204,6 +207,8 @@ namespace MusicBeePlugin
             starLinedIcon = null;
             menuIcon?.Dispose();
             menuIcon = null;
+            settingsIcon?.Dispose();
+            settingsIcon = null;
             
             // 释放 faviconImage
             faviconImage?.Dispose();
@@ -215,6 +220,8 @@ namespace MusicBeePlugin
             // 释放上下文菜单
             bookmarkContextMenu?.Dispose();
             bookmarkContextMenu = null;
+            settingsContextMenu?.Dispose();
+            settingsContextMenu = null;
             
             // 释放 locationBarPrompt
             locationBarPrompt?.Dispose();
@@ -264,6 +271,7 @@ namespace MusicBeePlugin
                         starFilledIcon = CreateThemedIcon("iconmonstr-star-3-24.png", Color.Transparent, themeForegroundColor);
                         starLinedIcon = CreateThemedIcon("iconmonstr-star-5-24.png", Color.Transparent, themeForegroundColor);
                         menuIcon = CreateThemedIcon("iconmonstr-menu-square-lined-24.png", Color.Transparent, themeForegroundColor);
+                        settingsIcon = CreateThemedIcon("iconmonstr-tools-14-24.png", Color.Transparent, themeForegroundColor);
 
                         var themedIcon = CreateThemedIcon("iconmonstr-networking-6-16.png", Color.Transparent, themeForegroundColor);
                         if (themedIcon != null)
@@ -586,7 +594,43 @@ namespace MusicBeePlugin
                 
                 if (profile != null)
                 {
-                    await ExtensionManager.LoadExtensionsAsync(profile);
+                    extensionIdMap = new System.Collections.Generic.Dictionary<string, string>();
+                    
+                    var extensionDirs = System.IO.Directory.GetDirectories(extensionsPath);
+                    foreach (string extensionDir in extensionDirs)
+                    {
+                        try
+                        {
+                            string manifestPath = System.IO.Path.Combine(extensionDir, "manifest.json");
+                            if (System.IO.File.Exists(manifestPath))
+                            {
+                                bool isDisabled = false;
+                                string manifestContent = System.IO.File.ReadAllText(manifestPath);
+                                using (var doc = System.Text.Json.JsonDocument.Parse(manifestContent))
+                                {
+                                    var root = doc.RootElement;
+                                    isDisabled = root.TryGetProperty("manifest_v2_disable", out _);
+                                }
+                                
+                                var extension = await profile.AddBrowserExtensionAsync(extensionDir);
+                                if (extension != null)
+                                {
+                                    await extension.EnableAsync(!isDisabled);
+                                    
+                                    string realId = extension.Id;
+                                    extensionIdMap[extensionDir] = realId;
+                                    
+                                    Log.Extension($"Browser2: Extension loaded - Path: {extensionDir}, RealId: {realId}, IsEnabled: {extension.IsEnabled}");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Extension("Browser2: Failed to load extension " + extensionDir + ": " + ex.Message);
+                        }
+                    }
+                    
+                    Log.Extension($"Browser2: Total extensions loaded: {extensionIdMap.Count}");
                 }
             }
             catch (Exception ex)
@@ -672,6 +716,7 @@ namespace MusicBeePlugin
         private Rectangle RefreshStopButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 0) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
         private Rectangle BookmarkButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 1) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
         private Rectangle BookmarkListButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 2) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
+        private Rectangle SettingsButtonBounds => header != null ? new Rectangle(header.Width - (RIGHT_MARGIN_BUTTONS + 3) * BUTTON_WIDTH - BUTTON_HEIGHT, (header.Height - BUTTON_HEIGHT) / 2, BUTTON_HEIGHT, BUTTON_HEIGHT) : Rectangle.Empty;
         
         private const int HEADER_FULL_HEIGHT = 43; // header 固定高度
 
@@ -819,6 +864,11 @@ namespace MusicBeePlugin
                 e.Graphics.DrawImage(menuIcon, BookmarkListButtonBounds);
             }
 
+            if (settingsIcon != null)
+            {
+                e.Graphics.DrawImage(settingsIcon, SettingsButtonBounds);
+            }
+
             if (faviconImage != null)
             {
                 e.Graphics.DrawImage(faviconImage, new Rectangle(110, 13, 16, 16));
@@ -846,7 +896,7 @@ namespace MusicBeePlugin
             {
                 // 计算左右按钮区域的宽度
                 int leftButtonWidth = (LEFT_MARGIN_BUTTONS + 3) * BUTTON_WIDTH;  // 左侧边距 + 3 个按钮
-                int rightButtonWidth = (RIGHT_MARGIN_BUTTONS + 3) * BUTTON_WIDTH; // 右侧边距 + 3 个按钮
+                int rightButtonWidth = (RIGHT_MARGIN_BUTTONS + 4) * BUTTON_WIDTH; // 右侧边距 + 4 个按钮
                 int buttonSpacing = 4;     // 按钮与地址栏的间距
                 
                 // 地址栏从左侧按钮区域后开始，到右侧按钮区域前结束
@@ -943,6 +993,10 @@ namespace MusicBeePlugin
             {
                 ShowBookmarkMenu();
             }
+            else if (SettingsButtonBounds.Contains(e.Location))
+            {
+                ShowSettingsMenu();
+            }
         }
 
         private void ShowBookmarkMenu()
@@ -976,6 +1030,268 @@ namespace MusicBeePlugin
 
             var location = header?.PointToScreen(new Point(header.Width - 50, header.Height)) ?? Cursor.Position;
             bookmarkContextMenu.Show(location);
+        }
+
+        private ContextMenuStrip settingsContextMenu;
+        private async void ShowSettingsMenu()
+        {
+            if (settingsContextMenu == null)
+            {
+                settingsContextMenu = new ContextMenuStrip();
+            }
+            settingsContextMenu.Items.Clear();
+
+            var settingsMenuItem = new ToolStripMenuItem
+            {
+                Text = "Settings"
+            };
+            settingsMenuItem.Click += (s, e) =>
+            {
+                Configure(IntPtr.Zero);
+            };
+            settingsContextMenu.Items.Add(settingsMenuItem);
+
+            if (settings.EnableExtensions && browser?.CoreWebView2?.Profile != null)
+            {
+                try
+                {
+                    string storagePath = mbApiInterface.Setting_GetPersistentStoragePath();
+                    string extensionsPath = System.IO.Path.Combine(storagePath, "Browser2Extensions");
+
+                    if (System.IO.Directory.Exists(extensionsPath))
+                    {
+                        var extensions = await ExtensionManager.GetAllExtensionsAsync(browser.CoreWebView2.Profile, extensionsPath);
+
+                        var enabledExtensions = extensions.Where(ext => ext.IsEnabled).ToArray();
+
+                        if (enabledExtensions.Length > 0)
+                        {
+                            settingsContextMenu.Items.Add(new ToolStripSeparator());
+
+                            foreach (var ext in enabledExtensions)
+                            {
+                                string optionsUrl = null;
+                                string popupUrl = null;
+                                string mainPageUrl = null;
+                                string manifestPath = System.IO.Path.Combine(ext.Path, "manifest.json");
+                                if (System.IO.File.Exists(manifestPath))
+                                {
+                                    try
+                                    {
+                                        string manifestJson = System.IO.File.ReadAllText(manifestPath);
+                                        using (var doc = System.Text.Json.JsonDocument.Parse(manifestJson))
+                                        {
+                                            var root = doc.RootElement;
+                                            
+                                            if (root.TryGetProperty("options_page", out var optionsPageProp))
+                                            {
+                                                optionsUrl = optionsPageProp.GetString();
+                                            }
+                                            else if (root.TryGetProperty("options_ui", out var optionsUiProp))
+                                            {
+                                                if (optionsUiProp.TryGetProperty("page", out var pageProp))
+                                                {
+                                                    optionsUrl = pageProp.GetString();
+                                                }
+                                            }
+                                            
+                                            if (root.TryGetProperty("action", out var actionProp))
+                                            {
+                                                if (actionProp.TryGetProperty("default_popup", out var popupProp))
+                                                {
+                                                    popupUrl = popupProp.GetString();
+                                                }
+                                            }
+                                            else if (root.TryGetProperty("browser_action", out var browserActionProp))
+                                            {
+                                                if (browserActionProp.TryGetProperty("default_popup", out var popupProp))
+                                                {
+                                                    popupUrl = popupProp.GetString();
+                                                }
+                                            }
+                                            else if (root.TryGetProperty("page_action", out var pageActionProp))
+                                            {
+                                                if (pageActionProp.TryGetProperty("default_popup", out var popupProp))
+                                                {
+                                                    popupUrl = popupProp.GetString();
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Log.General($"ShowSettingsMenu: Failed to read manifest for '{ext.Name}': {ex.Message}");
+                                    }
+                                }
+
+                                bool hasOptionsPage = !string.IsNullOrEmpty(optionsUrl);
+                                bool hasPopupPage = !string.IsNullOrEmpty(popupUrl);
+
+                                if (!hasOptionsPage && !hasPopupPage)
+                                {
+                                    mainPageUrl = FindExtensionMainPage(ext.Path);
+                                    if (string.IsNullOrEmpty(mainPageUrl))
+                                    {
+                                        Log.General($"ShowSettingsMenu: Skipping '{ext.Name}' - no HTML pages found");
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        Log.General($"ShowSettingsMenu: Using main page '{mainPageUrl}' for extension '{ext.Name}'");
+                                    }
+                                }
+
+                                string realExtensionId = ext.Id;
+                                if (extensionIdMap != null && extensionIdMap.ContainsKey(ext.Path))
+                                {
+                                    realExtensionId = extensionIdMap[ext.Path];
+                                    Log.General($"ShowSettingsMenu: Using real ID '{realExtensionId}' for extension '{ext.Name}' at path '{ext.Path}'");
+                                }
+                                else
+                                {
+                                    Log.General($"ShowSettingsMenu: Real ID not found in map, using fallback ID '{realExtensionId}' for extension '{ext.Name}'");
+                                }
+
+                                string extensionPath = ext.Path;
+                                string finalExtensionId = realExtensionId;
+
+                                if (hasPopupPage)
+                                {
+                                    var popupMenuItem = new ToolStripMenuItem
+                                    {
+                                        Text = $"{ext.Name} (Popup)"
+                                    };
+                                    string finalPopupUrl = popupUrl;
+                                    popupMenuItem.Click += async (s, e) =>
+                                    {
+                                        await OpenExtensionPage(finalExtensionId, extensionPath, finalPopupUrl, "Popup");
+                                    };
+                                    settingsContextMenu.Items.Add(popupMenuItem);
+                                }
+
+                                if (hasOptionsPage)
+                                {
+                                    var optionsMenuItem = new ToolStripMenuItem
+                                    {
+                                        Text = $"{ext.Name} (Options)"
+                                    };
+                                    string finalOptionsUrl = optionsUrl;
+                                    optionsMenuItem.Click += async (s, e) =>
+                                    {
+                                        await OpenExtensionPage(finalExtensionId, extensionPath, finalOptionsUrl, "Options");
+                                    };
+                                    settingsContextMenu.Items.Add(optionsMenuItem);
+                                }
+
+                                if (!hasOptionsPage && !hasPopupPage && !string.IsNullOrEmpty(mainPageUrl))
+                                {
+                                    var mainPageMenuItem = new ToolStripMenuItem
+                                    {
+                                        Text = $"{ext.Name} (Main Page)"
+                                    };
+                                    string finalMainPageUrl = mainPageUrl;
+                                    mainPageMenuItem.Click += async (s, e) =>
+                                    {
+                                        await OpenExtensionPage(finalExtensionId, extensionPath, finalMainPageUrl, "Main Page");
+                                    };
+                                    settingsContextMenu.Items.Add(mainPageMenuItem);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.General("ShowSettingsMenu error: " + ex.Message);
+                }
+            }
+
+            var location = header?.PointToScreen(new Point(
+                SettingsButtonBounds.X + SettingsButtonBounds.Width / 2,
+                SettingsButtonBounds.Bottom)) ?? Cursor.Position;
+            settingsContextMenu.Show(location);
+        }
+
+        private string FindExtensionMainPage(string extensionPath)
+        {
+            try
+            {
+                var priorityFiles = new[] {
+                    "index.html",
+                    "main.html",
+                    "app.html",
+                    "popup.html",
+                    "options.html",
+                    "home.html"
+                };
+
+                foreach (string fileName in priorityFiles)
+                {
+                    string filePath = System.IO.Path.Combine(extensionPath, fileName);
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        Log.General($"FindExtensionMainPage: Found priority file '{fileName}'");
+                        return fileName;
+                    }
+                }
+
+                string[] htmlFiles = System.IO.Directory.GetFiles(extensionPath, "*.html", System.IO.SearchOption.TopDirectoryOnly);
+                
+                if (htmlFiles.Length > 0)
+                {
+                    Array.Sort(htmlFiles, (a, b) =>
+                    {
+                        string nameA = System.IO.Path.GetFileName(a).ToLower();
+                        string nameB = System.IO.Path.GetFileName(b).ToLower();
+                        
+                        if (nameA.Contains("main") || nameA.Contains("index")) return -1;
+                        if (nameB.Contains("main") || nameB.Contains("index")) return 1;
+                        
+                        return string.Compare(nameA, nameB, StringComparison.OrdinalIgnoreCase);
+                    });
+                    
+                    string mainPage = System.IO.Path.GetFileName(htmlFiles[0]);
+                    Log.General($"FindExtensionMainPage: Found main page '{mainPage}' from {htmlFiles.Length} HTML files");
+                    return mainPage;
+                }
+
+                Log.General($"FindExtensionMainPage: No HTML files found in {extensionPath}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Log.General($"FindExtensionMainPage error: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async System.Threading.Tasks.Task OpenExtensionPage(string extensionId, string extensionPath, string pageUrl, string pageType)
+        {
+            try
+            {
+                if (browser?.CoreWebView2 == null)
+                {
+                    return;
+                }
+
+                Log.General($"OpenExtensionPage: Opening {pageType} page for extension '{extensionId}', URL='{pageUrl}'");
+
+                if (!string.IsNullOrEmpty(pageUrl))
+                {
+                    string fullUrl = $"extension://{extensionId}/{pageUrl.TrimStart('/')}";
+                    Log.General($"OpenExtensionPage: Navigating to '{fullUrl}'");
+                    browser.CoreWebView2.Navigate(fullUrl);
+                }
+                else
+                {
+                    mbApiInterface.MB_SetBackgroundTaskMessage($"Extension '{System.IO.Path.GetFileName(extensionPath)}' does not have a {pageType.ToLower()} page");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.General($"OpenExtensionPage error ({pageType}): " + ex.Message);
+                mbApiInterface.MB_SetBackgroundTaskMessage($"Failed to open extension {pageType.ToLower()} page: " + ex.Message);
+            }
         }
 
         private void RemoveFavourite(int index)

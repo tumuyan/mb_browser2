@@ -167,6 +167,7 @@ namespace MusicBeePlugin
 
                             string name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : Path.GetFileName(extensionDir);
                             string version = root.TryGetProperty("version", out var versionProp) ? versionProp.GetString() : "Unknown";
+                            string id = root.TryGetProperty("id", out var idProp) ? idProp.GetString() : Path.GetFileName(extensionDir);
 
                             Debug.WriteLine("ExtensionManager: Extension name: " + name);
                             Debug.WriteLine("ExtensionManager: Has manifest_v2_disable: " + root.TryGetProperty("manifest_v2_disable", out _));
@@ -191,7 +192,8 @@ namespace MusicBeePlugin
                                 Name = name,
                                 Version = version,
                                 IsEnabled = isEnabled,
-                                Path = extensionDir
+                                Path = extensionDir,
+                                Id = id
                             });
                         }
                     }
@@ -203,7 +205,8 @@ namespace MusicBeePlugin
                             Name = Path.GetFileName(extensionDir),
                             Version = "Unknown",
                             IsEnabled = true,
-                            Path = extensionDir
+                            Path = extensionDir,
+                            Id = Path.GetFileName(extensionDir)
                         });
                     }
                 }
