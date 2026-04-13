@@ -108,7 +108,7 @@ namespace MusicBeePlugin
             about.Type = PluginType.WebBrowser;
             about.VersionMajor = 1;
             about.VersionMinor = 0;
-            about.Revision = 6;
+            about.Revision = 7;
             about.Description = $"A modern web browser based on WebView2. (v{about.VersionMajor}.{about.VersionMinor}.{about.Revision})";
             about.MinInterfaceVersion = MinInterfaceVersion;
             about.MinApiRevision = MinApiRevision;
