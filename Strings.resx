@@ -147,6 +147,9 @@
   <data name="DarkModeDark" xml:space="preserve">
     <value>Dark</value>
   </data>
+  <data name="DarkModeLight" xml:space="preserve">
+    <value>Light</value>
+  </data>
   <data name="DarkModeMusicBeeTheme" xml:space="preserve">
     <value>MusicBee Theme</value>
   </data>

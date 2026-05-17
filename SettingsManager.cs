@@ -23,7 +23,8 @@ namespace MusicBeePlugin
     {
         Default = 0,
         Dark = 1,
-        MusicBeeTheme = 2
+        Light = 2,
+        MusicBeeTheme = 3
     }
 
     public enum OcclusionOptimizationType

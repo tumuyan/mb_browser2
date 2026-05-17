@@ -104,7 +104,13 @@ namespace MusicBeePlugin {
                 return ResourceManager.GetString("DarkModeDark", resourceCulture);
             }
         }
-        
+
+        internal static string DarkModeLight {
+            get {
+                return ResourceManager.GetString("DarkModeLight", resourceCulture);
+            }
+        }
+
         internal static string DarkModeMusicBeeTheme {
             get {
                 return ResourceManager.GetString("DarkModeMusicBeeTheme", resourceCulture);

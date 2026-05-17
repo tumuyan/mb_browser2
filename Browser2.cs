@@ -663,10 +663,16 @@ namespace MusicBeePlugin
                     var browserArgs = new System.Collections.Generic.List<string>();
                     
                     bool enableDarkMode = false;
-                    
+
                     if (settings.DarkMode == DarkModeType.Dark)
                     {
                         enableDarkMode = true;
+                    }
+                    else if (settings.DarkMode == DarkModeType.Light)
+                    {
+                        enableDarkMode = false;
+                        browserArgs.Add("--emulate-media-features=prefers-color-scheme:light");
+                        Log.General("Browser2: Light mode enabled");
                     }
                     else if (settings.DarkMode == DarkModeType.MusicBeeTheme)
                     {

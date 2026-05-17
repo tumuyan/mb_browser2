@@ -101,6 +101,7 @@ namespace MusicBeePlugin
             this.cmbDarkMode.Items.AddRange(new object[] {
             global::MusicBeePlugin.Strings.DarkModeDefault,
             global::MusicBeePlugin.Strings.DarkModeDark,
+            global::MusicBeePlugin.Strings.DarkModeLight,
             global::MusicBeePlugin.Strings.DarkModeMusicBeeTheme});
             this.cmbDarkMode.Location = new System.Drawing.Point(175, 116);
             this.cmbDarkMode.Margin = new System.Windows.Forms.Padding(4);
