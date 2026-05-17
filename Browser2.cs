@@ -90,6 +90,7 @@ namespace MusicBeePlugin
         private ContextMenuStrip bookmarkContextMenu;
 
         private System.Windows.Forms.Timer occlusionTimer;
+        private float cachedDpiScale = 1.0f;
 
         #region User32 API
 
@@ -515,6 +516,12 @@ namespace MusicBeePlugin
 
             if (occlusionTimer != null) return;
 
+            if (panel?.FindForm() != null)
+            {
+                using (var g = panel.FindForm().CreateGraphics())
+                    cachedDpiScale = g.DpiX / 96f;
+            }
+
             occlusionTimer = new System.Windows.Forms.Timer();
             occlusionTimer.Interval = 500;
             occlusionTimer.Tick += CheckWindowOcclusion;
@@ -569,14 +576,10 @@ namespace MusicBeePlugin
                 int h = browserRect.Height;
                 if (w <= 0 || h <= 0) return;
 
-                float dpiScale;
-                using (var g = form.CreateGraphics())
-                    dpiScale = g.DpiX / 96f;
-                
-                int marginLeft   = (int)(80  * dpiScale);
-                int marginRight  = (int)(80  * dpiScale);
-                int marginTop    = (int)(210 * dpiScale);
-                int marginBottom = (int)(56  * dpiScale);
+                int marginLeft   = (int)(80  * cachedDpiScale);
+                int marginRight  = (int)(80  * cachedDpiScale);
+                int marginTop    = (int)(210 * cachedDpiScale);
+                int marginBottom = (int)(56  * cachedDpiScale);
 
                 int cx = (browserRect.Left + browserRect.Right) / 2;
                 int cy = (browserRect.Top + browserRect.Bottom) / 2;
