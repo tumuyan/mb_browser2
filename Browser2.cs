@@ -89,6 +89,25 @@ namespace MusicBeePlugin
 
         private ContextMenuStrip bookmarkContextMenu;
 
+        private System.Windows.Forms.Timer occlusionTimer;
+
+        #region User32 API
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsIconic(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr WindowFromPoint(POINT Point);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetParent(IntPtr hWnd);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT { public int X; public int Y; }
+
+        #endregion
+
         private EventHandler openHandler;
         private EventHandler closeHandler;
 
@@ -165,6 +184,8 @@ namespace MusicBeePlugin
 
         public void Close(PluginCloseReason reason)
         {
+            StopOcclusionMonitoring();
+
             if (isSettingsDirty)
             {
                 SaveSettings();
@@ -485,6 +506,119 @@ namespace MusicBeePlugin
             }
         }
 
+        private void StartOcclusionMonitoring()
+        {
+            if (settings.OcclusionOptimization == OcclusionOptimizationType.Disabled)
+            {
+                return;
+            }
+
+            if (occlusionTimer != null) return;
+
+            occlusionTimer = new System.Windows.Forms.Timer();
+            occlusionTimer.Interval = 500;
+            occlusionTimer.Tick += CheckWindowOcclusion;
+            occlusionTimer.Start();
+
+            Log.General("Browser2: Occlusion monitoring started");
+        }
+
+        private void StopOcclusionMonitoring()
+        {
+            if (occlusionTimer != null)
+            {
+                occlusionTimer.Stop();
+                occlusionTimer.Dispose();
+                occlusionTimer = null;
+                Log.General("Browser2: Occlusion monitoring stopped");
+            }
+        }
+
+        private void CheckWindowOcclusion(object sender, EventArgs e)
+        {
+            if (browser == null || panel == null) return;
+
+            try
+            {
+                Form form = panel.FindForm();
+                if (form == null || !form.IsHandleCreated || form.IsDisposed) return;
+
+                if (settings.OcclusionOptimization == OcclusionOptimizationType.Disabled)
+                {
+                    if (!browser.Visible && shouldBrowserBeVisible) browser.Visible = true;
+                    return;
+                }
+
+                IntPtr hWnd = form.Handle;
+                if (hWnd == IntPtr.Zero) return;
+
+                if (IsIconic(hWnd))
+                {
+                    if (browser.Visible)
+                    {
+                        browser.Visible = false;
+                        Log.Resize("Browser2: Window minimized, paused rendering");
+                    }
+                    return;
+                }
+
+                if (!browser.IsHandleCreated) return;
+
+                Rectangle browserRect = browser.RectangleToScreen(browser.ClientRectangle);
+                int w = browserRect.Width;
+                int h = browserRect.Height;
+                if (w <= 0 || h <= 0) return;
+
+                POINT[] testPoints = new POINT[]
+                {
+                    new POINT { X = browserRect.Left + w / 2, Y = browserRect.Top + h / 2 },
+                    new POINT { X = browserRect.Left + w / 4, Y = browserRect.Top + h / 4 },
+                    new POINT { X = browserRect.Right - w / 4, Y = browserRect.Top + h / 4 },
+                    new POINT { X = browserRect.Left + w / 4, Y = browserRect.Bottom - h / 4 },
+                    new POINT { X = browserRect.Right - w / 4, Y = browserRect.Bottom - h / 4 }
+                };
+
+                int visibleCount = 0;
+                string[] pointResults = new string[5];
+                for (int i = 0; i < testPoints.Length; i++)
+                {
+                    IntPtr topWindow = WindowFromPoint(testPoints[i]);
+                    bool isOur = IsChildOrSelf(topWindow, hWnd);
+                    if (isOur) visibleCount++;
+                    pointResults[i] = isOur ? "✓" : "✗";
+                }
+
+                bool isVisible = visibleCount > 0;
+                Log.Resize($"SmartPause: [{string.Join("", pointResults)}] {visibleCount}/5 Vis={isVisible} Brw={browser.Visible} Rect=({browserRect.Left},{browserRect.Top},{browserRect.Right},{browserRect.Bottom})");
+
+                if (isVisible && !browser.Visible && shouldBrowserBeVisible)
+                {
+                    browser.Visible = true;
+                    Log.Resize($"Browser2: Resumed ({visibleCount}/5 visible)");
+                }
+                else if (!isVisible && browser.Visible)
+                {
+                    browser.Visible = false;
+                    Log.Resize("Browser2: Occluded, paused rendering");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.General($"Browser2: Occlusion check error: {ex.Message}");
+            }
+        }
+
+        private bool IsChildOrSelf(IntPtr hWnd, IntPtr parentHwnd)
+        {
+            IntPtr current = hWnd;
+            while (current != IntPtr.Zero)
+            {
+                if (current == parentHwnd) return true;
+                current = GetParent(current);
+            }
+            return false;
+        }
+
         private async void InitializeWebView2AndAddPanel()
         {
             if (browser?.CoreWebView2 != null)
@@ -608,6 +742,7 @@ namespace MusicBeePlugin
             mbApiInterface.MB_AddPanel(panel, PluginPanelDock.MainPanel);
             Log.General("Browser2: Panel added to MainPanel");
             RegisterFormResizeEvent();
+            StartOcclusionMonitoring();
             TryNavigate();
         }
         

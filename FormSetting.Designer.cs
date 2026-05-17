@@ -23,6 +23,8 @@ namespace MusicBeePlugin
             this.chkShowAddressBar = new System.Windows.Forms.CheckBox();
             this.lblDarkMode = new System.Windows.Forms.Label();
             this.cmbDarkMode = new System.Windows.Forms.ComboBox();
+            this.lblOcclusionOptimization = new System.Windows.Forms.Label();
+            this.cmbOcclusionOptimization = new System.Windows.Forms.ComboBox();
             this.chkEnableExtensions = new System.Windows.Forms.CheckBox();
             this.lblUrlDecodeChars = new System.Windows.Forms.Label();
             this.txtUrlDecodeChars = new System.Windows.Forms.TextBox();
@@ -100,11 +102,35 @@ namespace MusicBeePlugin
             global::MusicBeePlugin.Strings.DarkModeDefault,
             global::MusicBeePlugin.Strings.DarkModeDark,
             global::MusicBeePlugin.Strings.DarkModeMusicBeeTheme});
-            this.cmbDarkMode.Location = new System.Drawing.Point(113, 116);
+            this.cmbDarkMode.Location = new System.Drawing.Point(175, 116);
             this.cmbDarkMode.Margin = new System.Windows.Forms.Padding(4);
             this.cmbDarkMode.Name = "cmbDarkMode";
             this.cmbDarkMode.Size = new System.Drawing.Size(153, 26);
             this.cmbDarkMode.TabIndex = 4;
+            // 
+            // lblOcclusionOptimization
+            // 
+            this.lblOcclusionOptimization.AutoSize = true;
+            this.lblOcclusionOptimization.Location = new System.Drawing.Point(15, 152);
+            this.lblOcclusionOptimization.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblOcclusionOptimization.Name = "lblOcclusionOptimization";
+            this.lblOcclusionOptimization.Size = new System.Drawing.Size(116, 18);
+            this.lblOcclusionOptimization.TabIndex = 18;
+            this.lblOcclusionOptimization.Text = "Smart pause:";
+            // 
+            // cmbOcclusionOptimization
+            // 
+            this.cmbOcclusionOptimization.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbOcclusionOptimization.FormattingEnabled = true;
+            this.cmbOcclusionOptimization.Items.AddRange(new object[] {
+            "Off",
+            "On",
+            "Auto"});
+            this.cmbOcclusionOptimization.Location = new System.Drawing.Point(175, 148);
+            this.cmbOcclusionOptimization.Margin = new System.Windows.Forms.Padding(4);
+            this.cmbOcclusionOptimization.Name = "cmbOcclusionOptimization";
+            this.cmbOcclusionOptimization.Size = new System.Drawing.Size(153, 26);
+            this.cmbOcclusionOptimization.TabIndex = 19;
             // 
             // chkEnableExtensions
             // 
@@ -274,6 +300,8 @@ namespace MusicBeePlugin
             this.Controls.Add(this.btnOpenExtensionsFolder);
             this.Controls.Add(this.txtUrlDecodeChars);
             this.Controls.Add(this.lblUrlDecodeChars);
+            this.Controls.Add(this.cmbOcclusionOptimization);
+            this.Controls.Add(this.lblOcclusionOptimization);
             this.Controls.Add(this.chkEnableExtensions);
             this.Controls.Add(this.cmbDarkMode);
             this.Controls.Add(this.lblDarkMode);
@@ -306,6 +334,8 @@ namespace MusicBeePlugin
         private System.Windows.Forms.CheckBox chkShowAddressBar;
         private System.Windows.Forms.Label lblDarkMode;
         private System.Windows.Forms.ComboBox cmbDarkMode;
+        private System.Windows.Forms.Label lblOcclusionOptimization;
+        private System.Windows.Forms.ComboBox cmbOcclusionOptimization;
         private System.Windows.Forms.CheckBox chkEnableExtensions;
         private System.Windows.Forms.Button btnOpenExtensionsFolder;
         private System.Windows.Forms.Button btnInstallUnpackedExtension;

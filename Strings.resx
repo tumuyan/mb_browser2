@@ -243,4 +243,16 @@
   <data name="UrlDecodeCharsHint" xml:space="preserve">
     <value>Enter characters to auto-decode from URL (e.g.,input % to decode %22)</value>
   </data>
+  <data name="OcclusionOptimizationLabel" xml:space="preserve">
+    <value>Smart pause:</value>
+  </data>
+  <data name="OcclusionOptimizationDisabled" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="OcclusionOptimizationEnabled" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="OcclusionOptimizationAuto" xml:space="preserve">
+    <value>Auto</value>
+  </data>
 </root>

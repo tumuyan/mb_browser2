@@ -15,6 +15,7 @@ namespace MusicBeePlugin
         private DarkModeType originalDarkMode;
         private bool originalEnableExtensions;
         private string originalUrlDecodeChars;
+        private OcclusionOptimizationType originalOcclusionOptimization;
         public bool SettingsChanged { get; private set; }
 
         private string extensionsFolderPath;
@@ -33,6 +34,7 @@ namespace MusicBeePlugin
             this.originalDarkMode = settings.DarkMode;
             this.originalEnableExtensions = settings.EnableExtensions;
             this.originalUrlDecodeChars = settings.UrlDecodeChars ?? "";
+            this.originalOcclusionOptimization = settings.OcclusionOptimization;
             this.SettingsChanged = false;
 
             txtDefaultUrl.Text = settings.DefaultUrl ?? "";
@@ -41,6 +43,7 @@ namespace MusicBeePlugin
             cmbDarkMode.SelectedIndex = (int)settings.DarkMode;
             chkEnableExtensions.Checked = settings.EnableExtensions;
             txtUrlDecodeChars.Text = settings.UrlDecodeChars ?? "";
+            cmbOcclusionOptimization.SelectedIndex = (int)settings.OcclusionOptimization;
 
             btnSave.Click += BtnSave_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -195,6 +198,7 @@ namespace MusicBeePlugin
             settings.DarkMode = (DarkModeType)cmbDarkMode.SelectedIndex;
             settings.EnableExtensions = chkEnableExtensions.Checked;
             settings.UrlDecodeChars = txtUrlDecodeChars.Text.Trim();
+            settings.OcclusionOptimization = (OcclusionOptimizationType)cmbOcclusionOptimization.SelectedIndex;
 
             SettingsChanged = true;
 

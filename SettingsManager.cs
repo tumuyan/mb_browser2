@@ -26,6 +26,13 @@ namespace MusicBeePlugin
         MusicBeeTheme = 2
     }
 
+    public enum OcclusionOptimizationType
+    {
+        Disabled = 0,
+        Enabled = 1,
+        Auto = 2
+    }
+
     public class BrowserSettings
     {
         public int Version { get; set; } = 8;
@@ -37,6 +44,7 @@ namespace MusicBeePlugin
         public DarkModeType DarkMode { get; set; } = DarkModeType.Default;
         public bool EnableExtensions { get; set; } = false;
         public string UrlDecodeChars { get; set; } = "";
+        public OcclusionOptimizationType OcclusionOptimization { get; set; } = OcclusionOptimizationType.Auto;
     }
 
     public static class SettingsManager
