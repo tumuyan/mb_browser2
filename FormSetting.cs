@@ -43,7 +43,19 @@ namespace MusicBeePlugin
             cmbDarkMode.SelectedIndex = (int)settings.DarkMode;
             chkEnableExtensions.Checked = settings.EnableExtensions;
             txtUrlDecodeChars.Text = settings.UrlDecodeChars ?? "";
+
+            lblOcclusionOptimization.Text = Strings.OcclusionOptimizationLabel;
+            cmbOcclusionOptimization.Items.Clear();
+            cmbOcclusionOptimization.Items.AddRange(new[] {
+                Strings.OcclusionOptimizationDisabled,
+                Strings.OcclusionOptimizationEnabled,
+                Strings.OcclusionOptimizationAuto
+            });
             cmbOcclusionOptimization.SelectedIndex = (int)settings.OcclusionOptimization;
+
+            string projectLinkLabel = Strings.ProjectLink + " ";
+            linkProject.Text = projectLinkLabel + Strings.ProjectLinkUrl;
+            linkProject.LinkArea = new LinkArea(projectLinkLabel.Length, Strings.ProjectLinkUrl.Length);
 
             btnSave.Click += BtnSave_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -287,7 +299,7 @@ namespace MusicBeePlugin
             catch (Exception ex)
             {
                 Debug.WriteLine("Open project link error: " + ex.Message);
-                MessageBox.Show("Failed to open project link: " + ex.Message, Strings.FormTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(Strings.OpenProjectLinkFailed + " " + ex.Message, Strings.FormTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

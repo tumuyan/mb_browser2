@@ -50,7 +50,7 @@ namespace MusicBeePlugin
             this.lblHomePage.Name = "lblHomePage";
             this.lblHomePage.Size = new System.Drawing.Size(98, 18);
             this.lblHomePage.TabIndex = 16;
-            this.lblHomePage.Text = "Home Page:";
+            this.lblHomePage.Text = global::MusicBeePlugin.Strings.HomePage;
             // 
             // txtDefaultUrl
             // 
@@ -92,7 +92,7 @@ namespace MusicBeePlugin
             this.lblDarkMode.Name = "lblDarkMode";
             this.lblDarkMode.Size = new System.Drawing.Size(98, 18);
             this.lblDarkMode.TabIndex = 12;
-            this.lblDarkMode.Text = "Dark mode:";
+            this.lblDarkMode.Text = global::MusicBeePlugin.Strings.DarkModeLabel;
             // 
             // cmbDarkMode
             // 
@@ -151,7 +151,7 @@ namespace MusicBeePlugin
             this.lblUrlDecodeChars.Name = "lblUrlDecodeChars";
             this.lblUrlDecodeChars.Size = new System.Drawing.Size(233, 18);
             this.lblUrlDecodeChars.TabIndex = 17;
-            this.lblUrlDecodeChars.Text = "Decode characters in url:";
+            this.lblUrlDecodeChars.Text = global::MusicBeePlugin.Strings.UrlDecodeCharsLabel;
             // 
             // txtUrlDecodeChars
             // 
@@ -191,7 +191,7 @@ namespace MusicBeePlugin
             this.lblInstalledExtensions.Name = "lblInstalledExtensions";
             this.lblInstalledExtensions.Size = new System.Drawing.Size(197, 18);
             this.lblInstalledExtensions.TabIndex = 10;
-            this.lblInstalledExtensions.Text = "Installed Extensions:";
+            this.lblInstalledExtensions.Text = global::MusicBeePlugin.Strings.InstalledExtensions;
             // 
             // lstExtensions
             // 
@@ -246,7 +246,7 @@ namespace MusicBeePlugin
             this.lblRestartHint.Name = "lblRestartHint";
             this.lblRestartHint.Size = new System.Drawing.Size(386, 18);
             this.lblRestartHint.TabIndex = 13;
-            this.lblRestartHint.Text = "Some settings require restarting MusicBee.";
+            this.lblRestartHint.Text = global::MusicBeePlugin.Strings.RestartHint;
             // 
             // linkProject
             // 
@@ -259,7 +259,7 @@ namespace MusicBeePlugin
             this.linkProject.Size = new System.Drawing.Size(563, 26);
             this.linkProject.TabIndex = 12;
             this.linkProject.TabStop = true;
-            this.linkProject.Text = "Project Link https://github.com/tumuyan/mb_browser2/releases";
+            this.linkProject.Text = global::MusicBeePlugin.Strings.ProjectLink;
             this.linkProject.UseCompatibleTextRendering = true;
             this.linkProject.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.LinkProject_LinkClicked);
             // 
@@ -320,7 +320,7 @@ namespace MusicBeePlugin
             this.Name = "FormSetting";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Browser2 Settings";
+            this.Text = global::MusicBeePlugin.Strings.FormTitle;
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -303,5 +303,35 @@ namespace MusicBeePlugin {
                 return ResourceManager.GetString("UrlDecodeCharsHint", resourceCulture);
             }
         }
+
+        internal static string OcclusionOptimizationLabel {
+            get {
+                return ResourceManager.GetString("OcclusionOptimizationLabel", resourceCulture);
+            }
+        }
+
+        internal static string OcclusionOptimizationDisabled {
+            get {
+                return ResourceManager.GetString("OcclusionOptimizationDisabled", resourceCulture);
+            }
+        }
+
+        internal static string OcclusionOptimizationEnabled {
+            get {
+                return ResourceManager.GetString("OcclusionOptimizationEnabled", resourceCulture);
+            }
+        }
+
+        internal static string OcclusionOptimizationAuto {
+            get {
+                return ResourceManager.GetString("OcclusionOptimizationAuto", resourceCulture);
+            }
+        }
+
+        internal static string OpenProjectLinkFailed {
+            get {
+                return ResourceManager.GetString("OpenProjectLinkFailed", resourceCulture);
+            }
+        }
     }
 }

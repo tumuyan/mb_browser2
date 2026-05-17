@@ -255,4 +255,7 @@
   <data name="OcclusionOptimizationAuto" xml:space="preserve">
     <value>Auto</value>
   </data>
+  <data name="OpenProjectLinkFailed" xml:space="preserve">
+    <value>Failed to open project link:</value>
+  </data>
 </root>

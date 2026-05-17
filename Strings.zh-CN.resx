@@ -243,4 +243,19 @@
   <data name="UrlDecodeCharsHint" xml:space="preserve">
     <value>对设定的每个字符自动解码（比如输入%则自动解码%22）</value>
   </data>
+  <data name="OcclusionOptimizationLabel" xml:space="preserve">
+    <value>智能暂停:</value>
+  </data>
+  <data name="OcclusionOptimizationDisabled" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="OcclusionOptimizationEnabled" xml:space="preserve">
+    <value>开启</value>
+  </data>
+  <data name="OcclusionOptimizationAuto" xml:space="preserve">
+    <value>自动</value>
+  </data>
+  <data name="OpenProjectLinkFailed" xml:space="preserve">
+    <value>打开项目链接失败：</value>
+  </data>
 </root>
