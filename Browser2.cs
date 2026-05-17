@@ -331,8 +331,9 @@ namespace MusicBeePlugin
                 
                 if (browser != null)
                 {
+                    ResumeBrowser();
                     browser.Visible = true;
-                    Log.Navigation("Browser2: Set WebView2 Visible = true");
+                    Log.Navigation("Browser2: Resume and set WebView2 Visible = true");
                 }
                 
                 AddPanelToMusicBee();
@@ -462,8 +463,9 @@ namespace MusicBeePlugin
             {
                 if (browser.Visible)
                 {
+                    _ = SuspendBrowserAsync();
                     browser.Visible = false;
-                    Log.Resize("Browser2: MusicBee minimized, set browser.Visible = false");
+                    Log.Resize("Browser2: MusicBee minimized, suspend browser and set browser.Visible = false");
                 }
             }
             else if (form.WindowState == FormWindowState.Normal || form.WindowState == FormWindowState.Maximized)
@@ -471,8 +473,9 @@ namespace MusicBeePlugin
                 Log.Resize("Browser2: MusicBee restored");
                 if (shouldBrowserBeVisible && !browser.Visible)
                 {
+                    ResumeBrowser();
                     browser.Visible = true;
-                    Log.Resize("Browser2: shouldBrowserBeVisible = true, set browser.Visible = true");
+                    Log.Resize("Browser2: shouldBrowserBeVisible = true, resume browser and set browser.Visible = true");
                 }
                 else if (!shouldBrowserBeVisible)
                 {
@@ -668,8 +671,9 @@ namespace MusicBeePlugin
             }
             else if (panel.Visible && browser != null)
             {
+                ResumeBrowser();
                 browser.Visible = true;
-                Log.General("Browser2: Panel shown, set browser.Visible = true");
+                Log.General("Browser2: Panel shown, resume and set browser.Visible = true");
             }
         }
 
@@ -1394,6 +1398,38 @@ namespace MusicBeePlugin
             }
         }
 
+        private async System.Threading.Tasks.Task SuspendBrowserAsync()
+        {
+            if (browser?.CoreWebView2 != null)
+            {
+                try
+                {
+                    bool success = await browser.CoreWebView2.TrySuspendAsync();
+                    Log.General("Browser2: TrySuspendAsync " + (success ? "成功" : "失败（可能有活动媒体或事务）"));
+                }
+                catch (Exception ex)
+                {
+                    Log.General("Browser2: TrySuspendAsync 异常: " + ex.Message);
+                }
+            }
+        }
+
+        private void ResumeBrowser()
+        {
+            if (browser?.CoreWebView2 != null)
+            {
+                try
+                {
+                    browser.CoreWebView2.Resume();
+                    Log.General("Browser2: Resume 成功");
+                }
+                catch (Exception ex)
+                {
+                    Log.General("Browser2: Resume 异常: " + ex.Message);
+                }
+            }
+        }
+
         public void CloseBrowser(object sender, EventArgs e)
         {
             Log.General("Browser2: CloseBrowser called");
@@ -1404,6 +1440,7 @@ namespace MusicBeePlugin
             
             if (browser != null)
             {
+                _ = SuspendBrowserAsync();
                 browser.Visible = false;
                 Log.General("Browser2: Set WebView2 Visible = false");
             }
