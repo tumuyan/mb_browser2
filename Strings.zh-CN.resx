@@ -243,4 +243,7 @@
   <data name="UrlDecodeCharsHint" xml:space="preserve">
     <value>对设定的每个字符自动解码（比如输入%则自动解码%22）</value>
   </data>
+  <data name="EnableGpuFlags" xml:space="preserve">
+    <value>启用GPU渲染优化</value>
+  </data>
 </root>

@@ -303,5 +303,11 @@ namespace MusicBeePlugin {
                 return ResourceManager.GetString("UrlDecodeCharsHint", resourceCulture);
             }
         }
+        
+        internal static string EnableGpuFlags {
+            get {
+                return ResourceManager.GetString("EnableGpuFlags", resourceCulture);
+            }
+        }
     }
 }

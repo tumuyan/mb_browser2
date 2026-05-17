@@ -500,6 +500,14 @@ namespace MusicBeePlugin
                 {
                     var envSettings = new CoreWebView2EnvironmentOptions();
                     var browserArgs = new System.Collections.Generic.List<string>();
+                    var enabledFeatures = new System.Collections.Generic.List<string>();
+                    
+                    if (settings.EnableGpuFlags)
+                    {
+                        browserArgs.Add("--enable-gpu-rasterization");
+                        browserArgs.Add("--use-angle=d3d11");
+                        Log.General("Browser2: GPU flags enabled");
+                    }
                     
                     bool enableDarkMode = false;
                     
@@ -515,10 +523,16 @@ namespace MusicBeePlugin
                     
                     if (enableDarkMode)
                     {
-                        browserArgs.Add("--enable-features=ForceDarkModeFlag,MediaQueryEmulation");
+                        enabledFeatures.Add("ForceDarkModeFlag");
+                        enabledFeatures.Add("MediaQueryEmulation");
                         browserArgs.Add("--force-dark-mode");
                         browserArgs.Add("--emulate-media-features=prefers-color-scheme:dark");
                         Log.General("Browser2: Dark mode enabled");
+                    }
+                    
+                    if (enabledFeatures.Count > 0)
+                    {
+                        browserArgs.Add("--enable-features=" + string.Join(",", enabledFeatures));
                     }
                     
                     if (settings.EnableExtensions)

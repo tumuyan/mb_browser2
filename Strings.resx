@@ -243,4 +243,7 @@
   <data name="UrlDecodeCharsHint" xml:space="preserve">
     <value>Enter characters to auto-decode from URL (e.g.,input % to decode %22)</value>
   </data>
+  <data name="EnableGpuFlags" xml:space="preserve">
+    <value>Enable GPU rendering optimization</value>
+  </data>
 </root>

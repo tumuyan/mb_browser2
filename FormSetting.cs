@@ -14,6 +14,7 @@ namespace MusicBeePlugin
         private bool originalShowAddressBar;
         private DarkModeType originalDarkMode;
         private bool originalEnableExtensions;
+        private bool originalEnableGpuFlags;
         private string originalUrlDecodeChars;
         public bool SettingsChanged { get; private set; }
 
@@ -32,6 +33,7 @@ namespace MusicBeePlugin
             this.originalShowAddressBar = settings.ShowAddressBar;
             this.originalDarkMode = settings.DarkMode;
             this.originalEnableExtensions = settings.EnableExtensions;
+            this.originalEnableGpuFlags = settings.EnableGpuFlags;
             this.originalUrlDecodeChars = settings.UrlDecodeChars ?? "";
             this.SettingsChanged = false;
 
@@ -40,6 +42,8 @@ namespace MusicBeePlugin
             chkShowAddressBar.Checked = settings.ShowAddressBar;
             cmbDarkMode.SelectedIndex = (int)settings.DarkMode;
             chkEnableExtensions.Checked = settings.EnableExtensions;
+            chkEnableGpuFlags.Checked = settings.EnableGpuFlags;
+            chkEnableGpuFlags.Text = Strings.EnableGpuFlags;
             txtUrlDecodeChars.Text = settings.UrlDecodeChars ?? "";
 
             btnSave.Click += BtnSave_Click;
@@ -194,6 +198,7 @@ namespace MusicBeePlugin
             settings.ShowAddressBar = chkShowAddressBar.Checked;
             settings.DarkMode = (DarkModeType)cmbDarkMode.SelectedIndex;
             settings.EnableExtensions = chkEnableExtensions.Checked;
+            settings.EnableGpuFlags = chkEnableGpuFlags.Checked;
             settings.UrlDecodeChars = txtUrlDecodeChars.Text.Trim();
 
             SettingsChanged = true;

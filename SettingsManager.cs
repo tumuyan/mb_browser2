@@ -36,6 +36,7 @@ namespace MusicBeePlugin
         public bool ShowAddressBar { get; set; } = true;
         public DarkModeType DarkMode { get; set; } = DarkModeType.Default;
         public bool EnableExtensions { get; set; } = false;
+        public bool EnableGpuFlags { get; set; } = true;
         public string UrlDecodeChars { get; set; } = "";
     }
 
