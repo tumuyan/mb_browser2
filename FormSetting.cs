@@ -40,6 +40,7 @@ namespace MusicBeePlugin
             txtDefaultUrl.Text = settings.DefaultUrl ?? "";
             chkAutoSaveZoom.Checked = settings.AutoSaveZoom;
             chkShowAddressBar.Checked = settings.ShowAddressBar;
+            cmbDarkMode.Items.Insert(2, Strings.DarkModeLight);
             cmbDarkMode.SelectedIndex = (int)settings.DarkMode;
             chkEnableExtensions.Checked = settings.EnableExtensions;
             txtUrlDecodeChars.Text = settings.UrlDecodeChars ?? "";
