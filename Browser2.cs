@@ -595,9 +595,21 @@ namespace MusicBeePlugin
 
                 int visibleCount = 0;
                 string[] pointResults = new string[5];
+                
+                Rectangle screenBounds = Screen.GetWorkingArea(form);
+                
                 for (int i = 0; i < testPoints.Length; i++)
                 {
-                    IntPtr topWindow = WindowFromPoint(testPoints[i]);
+                    POINT p = testPoints[i];
+                    
+                    bool inScreen = screenBounds.Contains(p.X, p.Y);
+                    if (!inScreen)
+                    {
+                        pointResults[i] = "○";
+                        continue;
+                    }
+                    
+                    IntPtr topWindow = WindowFromPoint(p);
                     bool isOur = IsChildOrSelf(topWindow, hWnd);
                     if (isOur) visibleCount++;
                     pointResults[i] = isOur ? "✓" : "✗";
