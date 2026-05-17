@@ -569,13 +569,25 @@ namespace MusicBeePlugin
                 int h = browserRect.Height;
                 if (w <= 0 || h <= 0) return;
 
+                float dpiScale;
+                using (var g = form.CreateGraphics())
+                    dpiScale = g.DpiX / 96f;
+                
+                int marginLeft   = (int)(80  * dpiScale);
+                int marginRight  = (int)(80  * dpiScale);
+                int marginTop    = (int)(210 * dpiScale);
+                int marginBottom = (int)(56  * dpiScale);
+
+                int cx = (browserRect.Left + browserRect.Right) / 2;
+                int cy = (browserRect.Top + browserRect.Bottom) / 2;
+
                 POINT[] testPoints = new POINT[]
                 {
-                    new POINT { X = browserRect.Left + w / 2, Y = browserRect.Top + h / 2 },
-                    new POINT { X = browserRect.Left + w / 4, Y = browserRect.Top + h / 4 },
-                    new POINT { X = browserRect.Right - w / 4, Y = browserRect.Top + h / 4 },
-                    new POINT { X = browserRect.Left + w / 4, Y = browserRect.Bottom - h / 4 },
-                    new POINT { X = browserRect.Right - w / 4, Y = browserRect.Bottom - h / 4 }
+                    new POINT { X = cx, Y = cy },
+                    new POINT { X = browserRect.Left + marginLeft, Y = browserRect.Top + marginTop },
+                    new POINT { X = browserRect.Right - marginRight, Y = browserRect.Top + marginTop },
+                    new POINT { X = browserRect.Left + marginLeft, Y = browserRect.Bottom - marginBottom },
+                    new POINT { X = browserRect.Right - marginRight, Y = browserRect.Bottom - marginBottom }
                 };
 
                 int visibleCount = 0;
@@ -589,7 +601,7 @@ namespace MusicBeePlugin
                 }
 
                 bool isVisible = visibleCount > 0;
-                Log.Resize($"SmartPause: [{string.Join("", pointResults)}] {visibleCount}/5 Vis={isVisible} Brw={browser.Visible} Rect=({browserRect.Left},{browserRect.Top},{browserRect.Right},{browserRect.Bottom})");
+                Log.Resize($"SmartPause: [{string.Join("", pointResults)}] {visibleCount}/5 Vis={isVisible} Brw={browser.Visible} Mrg(L{marginLeft},T{marginTop},R{marginRight},B{marginBottom})");
 
                 if (isVisible && !browser.Visible && shouldBrowserBeVisible)
                 {
